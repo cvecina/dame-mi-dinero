@@ -34,16 +34,16 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/i18n',
+    // '@nuxtjs/i18n',
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
     '@vueuse/nuxt'
     //'@nuxt/image',
   ],
 
-  i18n: {
-    vueI18n: './i18n.config.ts' // if you are using custom path, default
-  },
+  // i18n: {
+  //   vueI18n: './i18n.config.ts' // if you are using custom path, default
+  // },
 
   css: [
     "@/assets/css/main.css"
@@ -55,6 +55,16 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'light', // default theme
     dataValue: 'theme', // activate data-theme in <html> tag
+  },
+
+  // Configuración de almacenamiento persistente
+  nitro: {
+    storage: {
+      db: {
+        driver: 'fs',
+        base: './data'
+      }
+    }
   },
 
   compatibilityDate: '2025-01-29',

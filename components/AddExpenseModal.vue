@@ -1,0 +1,239 @@
+<template>
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-semibold text-[#2E2E2E]">Añadir nuevo gasto</h2>
+                <button 
+                    @click="$emit('close')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form @submit.prevent="submitExpense" class="p-6 space-y-4">
+                <!-- Título -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Título del gasto
+                    </label>
+                    <input
+                        v-model="formData.title"
+                        type="text"
+                        required
+                        placeholder="Ej: Cena en el restaurante"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Cantidad -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Cantidad (€)
+                    </label>
+                    <input
+                        v-model.number="formData.amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        required
+                        placeholder="0.00"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Categoría -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Categoría
+                    </label>
+                    <select
+                        v-model="formData.category"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                    >
+                        <option value="">Selecciona una categoría</option>
+                        <option value="Comida">Comida</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Alojamiento">Alojamiento</option>
+                        <option value="Entretenimiento">Entretenimiento</option>
+                        <option value="Compras">Compras</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+
+                <!-- Descripción -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Descripción (opcional)
+                    </label>
+                    <textarea
+                        v-model="formData.description"
+                        rows="3"
+                        placeholder="Descripción del gasto..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent resize-none"
+                    ></textarea>
+                </div>
+
+                <!-- Quién pagó -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Quién pagó
+                    </label>
+                    <select
+                        v-model="formData.paidBy"
+                        required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                    >
+                        <option value="">Selecciona quién pagó</option>
+                        <option v-for="user in users" :key="user.id" :value="user.id">
+                            {{ user.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Participantes -->
+                <div>
+                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                        Participantes
+                    </label>
+                    <div class="space-y-2 max-h-32 overflow-y-auto">
+                        <label 
+                            v-for="user in users" 
+                            :key="user.id"
+                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F4E9D8] cursor-pointer"
+                        >
+                            <input
+                                type="checkbox"
+                                :value="user.id"
+                                v-model="formData.participants"
+                                class="w-4 h-4 text-[#2BAE66] border-gray-300 rounded focus:ring-[#2BAE66]"
+                            >
+                            <span class="text-sm text-[#2E2E2E]">{{ user.name }}</span>
+                        </label>
+                    </div>
+                    <p v-if="formData.participants.length === 0" class="text-sm text-[#FF6B6B] mt-1">
+                        Debes seleccionar al menos un participante
+                    </p>
+                </div>
+
+                <!-- División del gasto -->
+                <div v-if="formData.participants.length > 0 && formData.amount > 0" class="border-t pt-4">
+                    <h3 class="text-sm font-medium text-[#2E2E2E] mb-2">División del gasto</h3>
+                    <div class="space-y-2">
+                        <div 
+                            v-for="participantId in formData.participants" 
+                            :key="participantId"
+                            class="flex items-center justify-between p-2 bg-[#F4E9D8] rounded-lg"
+                        >
+                            <span class="text-sm text-[#2E2E2E]">{{ getUserName(participantId) }}</span>
+                            <span class="text-sm font-medium text-[#2BAE66]">
+                                {{ formatMoney(formData.amount / formData.participants.length) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex gap-3 pt-4">
+                    <button
+                        type="button"
+                        @click="$emit('close')"
+                        class="flex-1 px-4 py-2 text-[#2E2E2E] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        :disabled="!isFormValid"
+                        class="flex-1 px-4 py-2 bg-[#2BAE66] text-white rounded-lg hover:bg-[#4DA1FF] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                        Añadir gasto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue'
+import { useExpenseStore } from '~/stores/expense.store'
+import { useUserStore } from '~/stores/user.store'
+
+// Emits
+const emit = defineEmits(['close', 'expense-added'])
+
+// Stores
+const expenseStore = useExpenseStore()
+const userStore = useUserStore()
+
+// Form data
+const formData = ref({
+    title: '',
+    amount: 0,
+    category: '',
+    description: '',
+    paidBy: userStore.getCurrentUser.id,
+    participants: [userStore.getCurrentUser.id]
+})
+
+// Computed
+const users = computed(() => userStore.getAllUsers)
+
+const isFormValid = computed(() => {
+    return formData.value.title.trim() !== '' &&
+           formData.value.amount > 0 &&
+           formData.value.category !== '' &&
+           formData.value.paidBy !== '' &&
+           formData.value.participants.length > 0
+})
+
+// Methods
+const getUserName = (userId) => {
+    const user = userStore.getUserById(userId)
+    return user ? user.name : 'Usuario desconocido'
+}
+
+const formatMoney = (amount) => {
+    return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(amount)
+}
+
+const submitExpense = async () => {
+    if (!isFormValid.value) return
+
+    try {
+        const expenseData = {
+            title: formData.value.title,
+            amount: formData.value.amount,
+            category: formData.value.category,
+            description: formData.value.description,
+            paidBy: formData.value.paidBy,
+            participants: formData.value.participants
+        }
+
+        await expenseStore.addExpense(expenseData)
+        emit('expense-added')
+        console.log('submitExpense')
+    } catch (error) {
+        console.error('Error al añadir gasto:', error)
+        // Aquí podrías mostrar un error al usuario
+    }
+}
+
+// Watcher para asegurar que el pagador esté incluido en los participantes
+watch(() => formData.value.paidBy, (newPaidBy) => {
+    if (newPaidBy && !formData.value.participants.includes(newPaidBy)) {
+        formData.value.participants.push(newPaidBy)
+    }
+})
+
+console.log('AddExpenseModal')
+</script>
