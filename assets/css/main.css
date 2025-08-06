@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* .titulo 
+
+{
+    @apply card bordered bg-red-200 shadow-lg rounded-lg mx-2 my-4 p-4
+} */
+/* .div--tabla-motivales{
+  @apply overflow-x-auto h-[900px];
+} */
+.div--tabla-motivales {
+  @apply overflow-x-auto h-[900px];
+}
+
+.carta {
+  @apply card w-96 max-w-md mx-auto md:max-w-2xl bg-primary shadow-md overflow-hidden;
+}
+
+.tabla-motivales {
+  @apply divide-y min-w-full table-auto;
+}
+
+.thead-motivales {
+  @apply sticky top-0;
+  z-index: 1;
+}
+
+.tr-header-motivales {
+  @apply sticky top-0 uppercase text-sm leading-normal;
+}
+
+.th-motivales {
+  @apply sticky top-0 lg:table-cell md:table-cell py-2 px-4 overflow-hidden overflow-ellipsis whitespace-nowrap max-w-xs;
+}
+
+.tbody-motivales {
+  @apply text-sm font-light;
+}
+
+.tr-body-motivales {
+  @apply border-b;
+}
+
+.tabla__default--div {
+  @apply w-full overflow-x-auto;
+}
+
+.tabla__default--table {
+  @apply divide-y;
+}
+
+.tabla__default--thead {
+  @apply sticky top-0
+}
+
+.table__default--tr {
+  @apply sticky top-0 uppercase text-sm leading-normal
+}
+
+.table__default--th {
+  @apply md:table-cell py-2 px-4;
+}
+
+.table__default--tbody {
+  @apply text-sm font-light text-left;
+}
+
+.table__default--tr__tbody {
+  @apply border-b;
+}
+
+.table__default--td {
+  @apply table-cell py-2 px-4 overflow-ellipsis whitespace-nowrap;
+}
+
+/* HEADER */
+.header {
+  @apply bg-white h-[100px] flex items-center text-black px-[49px];
+}
+
+.header__login {
+  @apply bg-white h-[100px] flex md:block items-center justify-center text-black px-[49px];
+}
+
+.header__logo {
+  @apply w-[70px] h-[70px] lg:w-[90px] lg:h-[90px] flex items-center justify-center;
+}
+
+.header__logo--login {
+  @apply w-[70px] h-[70px] lg:w-[90px] lg:h-[90px] flex items-center justify-center m-auto;
+}
+
+.header__nav {
+  @apply lg:flex hidden items-center space-x-6 ml-[20px];
+}
+
+.header__logout {
+  @apply xl:ml-auto lg:ml-auto xl:items-center lg:items-center lg:flex hidden;
+}
+
+.header__links {
+  @apply hidden lg:flex xl:flex lg:items-center xl:items-center;
+}
+
+.menu-button {
+  @apply focus:outline-none;
+}
+
+.menu-content {
+  @apply absolute right-2 mt-2 w-48 bg-white border shadow-lg py-2 z-30;
+}
+
+.menu-content .mobile__links {
+  @apply block px-4 py-2 text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer;
+}
+
+.cerrar__sesion--menu {
+  @apply block px-4 py-2 text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter,
+.fade-leave-to
+
+/* .fade-leave-active in <2.1.8 */
+  {
+  opacity: 0;
+}
+
+
+/* TABLAS */
+
+/* MENU TABLA */
+.menu__tabla {
+  @apply mb-[16px] mt-[16px] flex items-center justify-between;
+  /* flex items-center m-2 flex-col lg:justify-between lg:flex-row lg:items-center; */
+}
+
+.menu__tabla--izquierda {
+  @apply flex flex-row justify-center items-center float-left
+}
+
+.menu__tabla--derecha {
+  @apply flex flex-row justify-center items-center float-right
+}
+
+/* MENU LATERAL */
+
+.menu__lateral--izq {
+  @apply w-[300px] h-screen float-left flex flex-col bg-white justify-between pt-[20px] pb-[20px]
+}
+
+/* BUSCADOR */
+.buscador__top {
+  @apply flex justify-center items-center;
+}
+
+.buscador__label {
+  @apply input border-[#CED1DA] flex items-center bg-white p-2;
+}
+
+/* CERRAR SESIÓN */
+
+.cerrar__sesion--menu {
+  @apply block px-4 py-2 text-gray-700 hover:bg-gray-100 w-full text-left cursor-pointer;
+}

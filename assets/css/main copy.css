@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* .titulo 
+
+{
+    @apply card bordered bg-red-200 shadow-lg rounded-lg mx-2 my-4 p-4
+} */
+/* .div--tabla-motivales{
+  @apply overflow-x-auto h-[900px];
+} */
+
+ 
+ .tabla-motivales{
+    @apply divide-y divide-gray-200 min-w-full;
+  }
+ 
+  .thead-motivales{
+    @apply sticky top-0;
+    z-index: 1;
+  }
+
+  .tr-header-motivales{
+    @apply sticky top-0 bg-gray-200 text-gray-800 uppercase text-sm leading-normal;
+  }
+
+  .th-motivales{
+    @apply sticky top-0 md:table-cell lg:table-cell md:table-cell py-2 px-4 text-center overflow-hidden overflow-ellipsis whitespace-nowrap max-w-xs;
+  }
+
+
+  .tbody-motivales {
+    @apply text-gray-600 text-sm font-light text-center;
+  }
+
+  .tr-body-motivales {
+    @apply border-b border-gray-200 hover:bg-gray-100;
+  }
+
+.tabla__default--div{
+  @apply w-full overflow-x-auto;
+}
+
+.tabla__default--table{
+  @apply divide-y divide-gray-200;
+}
+
+.tabla__default--thead{
+@apply sticky top-0
+}
+
+.table__default--tr{
+@apply sticky top-0 bg-gray-200 text-gray-800 uppercase text-sm leading-normal
+}
+
+.table__default--th{
+@apply md:table-cell py-2 px-4 text-center;
+}
+
+.table__default--tbody{
+@apply text-gray-600 text-sm font-light text-center;
+}
+
+.table__default--tr__tbody{
+@apply border-b border-gray-200 hover:bg-gray-100
+}
+
+.table__default--td{
+@apply table-cell bg-gray-50 py-2 px-4 text-center overflow-hidden overflow-ellipsis whitespace-nowrap;
+}
