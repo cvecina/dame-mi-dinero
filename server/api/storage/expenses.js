@@ -1,13 +1,22 @@
 // Para desarrollo local, usar almacenamiento de archivos
-// Para producción (Vercel), usar Vercel KV
-let kv;
+// Para producción (Vercel), usar Upstash Redis
+let redis;
 try {
-    // Intentar importar Vercel KV (solo funciona en producción o con variables configuradas)
-    const { kv: vercelKv } = await import('@vercel/kv');
-    kv = vercelKv;
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        // Usar Upstash Redis en producción
+        const { Redis } = await import('@upstash/redis');
+        redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+    } else if (process.env.KV_REST_API_URL) {
+        // Fallback a Vercel KV si está configurado
+        const { kv } = await import('@vercel/kv');
+        redis = kv;
+    }
 } catch (error) {
     // Si falla, usar null y caer back a storage local
-    kv = null;
+    redis = null;
 }
 
 export default defineEventHandler(async (event) => {
@@ -18,9 +27,9 @@ export default defineEventHandler(async (event) => {
             // Leer gastos del storage
             let expenses = [];
             
-            if (kv && process.env.KV_REST_API_URL) {
-                // Usar Vercel KV en producción
-                expenses = await kv.get('expenses') || []
+            if (redis) {
+                // Usar Redis/KV en producción
+                expenses = await redis.get('expenses') || []
             } else {
                 // Usar storage local en desarrollo
                 expenses = await useStorage('db').getItem('expenses') || []
@@ -33,9 +42,9 @@ export default defineEventHandler(async (event) => {
             // Guardar gastos en el storage
             const body = await readBody(event)
             
-            if (kv && process.env.KV_REST_API_URL) {
-                // Usar Vercel KV en producción
-                await kv.set('expenses', body)
+            if (redis) {
+                // Usar Redis/KV en producción
+                await redis.set('expenses', body)
             } else {
                 // Usar storage local en desarrollo
                 await useStorage('db').setItem('expenses', body)
