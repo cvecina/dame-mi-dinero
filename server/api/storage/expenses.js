@@ -2,20 +2,24 @@
 // Para producción (Vercel), usar Upstash Redis
 let redis;
 try {
-    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
-        // Usar Upstash Redis en producción
+    // Priorizar las variables de Vercel KV que ya tienes configuradas
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+        // Usar las variables de KV que ya tienes
+        const { Redis } = await import('@upstash/redis');
+        redis = new Redis({
+            url: process.env.KV_REST_API_URL,
+            token: process.env.KV_REST_API_TOKEN,
+        });
+    } else if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+        // Fallback a variables específicas de Upstash
         const { Redis } = await import('@upstash/redis');
         redis = new Redis({
             url: process.env.UPSTASH_REDIS_REST_URL,
             token: process.env.UPSTASH_REDIS_REST_TOKEN,
         });
-    } else if (process.env.KV_REST_API_URL) {
-        // Fallback a Vercel KV si está configurado
-        const { kv } = await import('@vercel/kv');
-        redis = kv;
     }
 } catch (error) {
-    // Si falla, usar null y caer back a storage local
+    console.error('Error connecting to Redis:', error);
     redis = null;
 }
 
