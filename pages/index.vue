@@ -87,7 +87,7 @@
                         </div>
                         <div class="text-left sm:text-right">
                             <p class="text-base sm:text-lg font-semibold text-azul-tiquet">{{ formatMoney(expense.amount) }}</p>
-                            <p class="text-xs sm:text-sm text-gray-600">{{ expense.userIds?.length || 0 }} participantes</p>
+                            <p class="text-xs sm:text-sm text-gray-600">{{ expense.participants?.length || 0 }} participantes</p>
                         </div>
                     </div>
                     
@@ -230,8 +230,7 @@ const expenses = computed(() => {
 })
 
 const pendingPayments = computed(() => {
-    const currentUser = userStore.currentUser
-    if (!currentUser) return []
+    if (!currentUser.value) return []
     
     const allExpenses = expenseStore.getAllExpenses
     if (!allExpenses || !Array.isArray(allExpenses)) return []
@@ -240,19 +239,28 @@ const pendingPayments = computed(() => {
     
     allExpenses.forEach(expense => {
         // Validar que el expense tenga las propiedades necesarias
-        if (!expense || !expense.userIds || !Array.isArray(expense.userIds) || !expense.amount || !expense.id) {
+        if (!expense || !expense.participants || !Array.isArray(expense.participants) || !expense.amount || !expense.id) {
             return
         }
         
-        const userAmount = expense.amount / expense.userIds.length
-        const isUserPaid = expenseStore.getUserPaymentStatus(currentUser.id, expense.id)
+        // Verificar si el usuario actual participa en este gasto
+        if (!expense.participants.includes(currentUser.value.id)) {
+            return
+        }
         
-        if (expense.userIds.includes(currentUser.id) && !isUserPaid) {
+        // Calcular el monto que debe pagar este usuario
+        const userAmount = expense.amount / expense.participants.length
+        
+        // Verificar si ya está marcado como pagado
+        const isUserPaid = expenseStore.getUserPaymentStatus(expense.id, currentUser.value.id)
+        
+        // Si no ha pagado, agregarlo a pendientes
+        if (!isUserPaid) {
             pending.push({
                 id: expense.id,
                 title: expense.title || 'Sin título',
                 amount: userAmount,
-                paidBy: userStore.getUserById(expense.paidBy)?.name || 'Usuario desconocido',
+                paidBy: getUserName(expense.paidBy),
                 date: expense.date || new Date().toISOString()
             })
         }
@@ -301,15 +309,14 @@ const onExpenseAdded = async () => {
 }
 
 const markPaymentAsPaid = async (expenseId) => {
-    const currentUser = userStore.currentUser
-    if (!currentUser) return
+    if (!currentUser.value) return
     
     try {
-        await expenseStore.markUserPayment(currentUser.id, expenseId, true)
-        alertStore.success('Pago marcado como pagado')
+        await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
+        alertStore.showAlert('success', 'Pago marcado como pagado')
         console.log('markPaymentAsPaid')
     } catch (error) {
-        alertStore.error('Error al marcar el pago')
+        alertStore.showAlert('error', 'Error al marcar el pago')
     }
 }
 

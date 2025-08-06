@@ -133,55 +133,38 @@
                                 </p>
                             </div>
 
-                            <!-- Participantes y división -->
+                            <!-- Estado de pagos individuales -->
                             <div class="mt-3">
                                 <p class="text-xs sm:text-sm font-medium text-gris-billetera mb-2">
-                                    División entre {{ expense.participants.length }} participantes:
+                                    Estado de pagos:
                                 </p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     <div 
-                                        v-for="split in expense.splits" 
-                                        :key="split.userId"
-                                        class="bg-marfil-mapamundi px-3 py-2 rounded-lg text-xs sm:text-sm border"
+                                        v-for="participant in expense.participants" 
+                                        :key="participant"
+                                        class="flex flex-col sm:flex-row sm:items-center justify-between py-2 px-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
                                     >
-                                        <div class="font-medium">{{ getUserName(split.userId) }}</div>
-                                        <div class="text-gray-600">{{ formatMoney(split.amount) }}</div>
-                                    </div>
-                                </div>
-
-                                <!-- Estado de pagos individuales -->
-                                <div class="border-t pt-3">
-                                    <p class="text-xs sm:text-sm font-medium text-gris-billetera mb-2">
-                                        Estado de pagos:
-                                    </p>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        <div 
-                                            v-for="participant in expense.participants" 
-                                            :key="participant"
-                                            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 px-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
-                                        >
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-6 h-6 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-xs font-semibold">
-                                                    {{ getUserName(participant).charAt(0).toUpperCase() }}
-                                                </div>
-                                                <span class="text-xs sm:text-sm font-medium">{{ getUserName(participant) }}</span>
-                                                <span class="text-xs text-gray-600">
-                                                    ({{ formatMoney(getUserAmountInExpense(expense, participant)) }})
-                                                </span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-6 h-6 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-xs font-semibold">
+                                                {{ getUserName(participant).charAt(0).toUpperCase() }}
                                             </div>
-                                            
-                                            <button
-                                                @click="togglePaymentStatus(expense.id, participant)"
-                                                :class="[
-                                                    'px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap',
-                                                    getUserPaymentStatus(expense.id, participant) 
-                                                        ? 'bg-lima-compartida text-gris-billetera hover:bg-azul-claro-viaje' 
-                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                ]"
-                                            >
-                                                {{ getUserPaymentStatus(expense.id, participant) ? '✓ Pagado' : 'Marcar como pagado' }}
-                                            </button>
+                                            <span class="text-xs sm:text-sm font-medium">{{ getUserName(participant) }}</span>
+                                            <span class="text-xs text-gray-600">
+                                                ({{ formatMoney(getUserAmountInExpense(expense, participant)) }})
+                                            </span>
                                         </div>
+                                        
+                                        <button
+                                            @click="togglePaymentStatus(expense.id, participant)"
+                                            :class="[
+                                                'px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap',
+                                                getUserPaymentStatus(expense.id, participant) 
+                                                    ? 'bg-lima-compartida text-gris-billetera hover:bg-azul-claro-viaje' 
+                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ]"
+                                        >
+                                            {{ getUserPaymentStatus(expense.id, participant) ? '✓ Pagado' : 'Marcar como pagado' }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
