@@ -8,7 +8,7 @@ export const useExpenseStore = defineStore({
     }),
     
     getters: {
-        getAllExpenses: (state) => state.expenses,
+        getAllExpenses: (state) => Array.isArray(state.expenses) ? state.expenses : [],
         
         getExpensesByUser: (state) => (userId) => {
             return state.expenses.filter(expense => 

@@ -8,13 +8,13 @@ const store = useAlertStore();
 const color = computed(() => {
   switch (store.alert.type) {
     case "success":
-      return "bg-[#2EAC80]";
+      return "bg-lima-compartida";
     case "error":
-      return "bg-[#E2462F]";
+      return "bg-red-500";
     case "warn":
-      return "bg-[#FD9804]";
+      return "bg-yellow-500";
     default:
-      return "bg-[#2EAC80]";
+      return "bg-lima-compartida";
   }
 });
 
@@ -52,12 +52,12 @@ const formattedMessage = computed(() => formatMessage(store.alert.message));
   <div class="toast toast-top toast-end" style="z-index: 99">
     <div
       v-if="store.alert.message"
-      class="flex text-white p-4 rounded-lg shadow-lg items-start justify-center"
+      class="flex text-blanco-dividido p-3 sm:p-4 rounded-lg shadow-lg items-start justify-center max-w-xs sm:max-w-sm"
       :class="color"
       role="alert"
     >
-      <img class="pr-2" :src="getImage()" alt="no funciona" />
-      <p v-html="formattedMessage"></p>
+      <img class="pr-2 w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" :src="getImage()" alt="alert icon" />
+      <p class="text-sm sm:text-base" v-html="formattedMessage"></p>
     </div>
   </div>
 </template>

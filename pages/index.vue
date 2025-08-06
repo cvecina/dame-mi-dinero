@@ -1,47 +1,56 @@
 <template>
-    <div class="min-h-screen bg-[#FAFAFA] p-4">
+    <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
         <!-- Loading state -->
         <div v-if="isLoading" class="flex items-center justify-center py-20">
             <div class="text-center">
-                <div class="w-16 h-16 border-4 border-[#2BAE66] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-[#2E2E2E] font-medium">Cargando datos...</p>
+                <div class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gris-billetera font-medium">Cargando datos...</p>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando no hay usuario seleccionado -->
+        <div v-else-if="!currentUser" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <div class="text-6xl mb-4">👋</div>
+                <h2 class="text-xl font-semibold text-gris-billetera mb-2">¡Hola!</h2>
+                <p class="text-gray-600">Selecciona tu usuario para ver tu dashboard</p>
             </div>
         </div>
 
         <!-- Main content -->
         <div v-else>
             <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-[#2E2E2E] mb-2">Dame mi dinero</h1>
-                <p class="text-gray-600">Controla tus gastos compartidos con amigos</p>
+            <div class="mb-6 sm:mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Dame mi dinero</h1>
+                <p class="text-sm sm:text-base text-gray-600">Controla tus gastos compartidos con amigos</p>
             </div>
 
             <!-- Resumen de balances -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#2BAE66]">
-                    <h3 class="text-lg font-semibold text-[#2E2E2E] mb-2">Total gastado</h3>
-                    <p class="text-2xl font-bold text-[#2BAE66]">{{ formatMoney(totalExpenses) }}</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-azul-tiquet">
+                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Total gastado</h3>
+                    <p class="text-xl sm:text-2xl font-bold text-azul-tiquet">{{ formatMoney(totalExpenses) }}</p>
                 </div>
                 
-                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#FF6B6B]">
-                    <h3 class="text-lg font-semibold text-[#2E2E2E] mb-2">Tu balance</h3>
-                    <p class="text-2xl font-bold" :class="userBalance >= 0 ? 'text-[#2BAE66]' : 'text-[#FF6B6B]'">
+                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-lima-compartida">
+                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Tu balance</h3>
+                    <p class="text-xl sm:text-2xl font-bold" :class="userBalance >= 0 ? 'text-azul-tiquet' : 'text-red-500'">
                         {{ formatMoney(userBalance) }}
                     </p>
                 </div>
                 
-                <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#4DA1FF]">
-                    <h3 class="text-lg font-semibold text-[#2E2E2E] mb-2">Gastos este mes</h3>
-                    <p class="text-2xl font-bold text-[#4DA1FF]">{{ expenses.length }}</p>
+                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-azul-claro-viaje sm:col-span-2 lg:col-span-1">
+                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Gastos este mes</h3>
+                    <p class="text-xl sm:text-2xl font-bold text-azul-claro-viaje">{{ expenses.length }}</p>
                 </div>
             </div>
 
             <!-- Botón para añadir gasto -->
-            <div class="mb-6">
+            <div class="mb-4 sm:mb-6">
                 <button 
                     @click="showAddExpenseModal = true"
-                    :disabled="expenseStore.isLoading"
-                    class="bg-[#2BAE66] hover:bg-[#4DA1FF] text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                    :disabled="expenseStore.isLoading || !currentUser"
+                    class="w-full sm:w-auto bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start gap-2 disabled:opacity-50"
                 >
                     <span class="text-xl">+</span>
                     Añadir gasto
@@ -49,36 +58,36 @@
             </div>
 
             <!-- Lista de gastos recientes -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 class="text-xl font-semibold text-[#2E2E2E] mb-4">Gastos recientes</h2>
+            <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+                <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera mb-4">Gastos recientes</h2>
                 
                 <div v-if="expenses.length === 0" class="text-center py-8 text-gray-500">
                     <div class="text-4xl mb-2">💸</div>
-                    <p>No hay gastos registrados</p>
+                    <p class="text-sm sm:text-base">No hay gastos registrados</p>
                     <button 
                         @click="showAddExpenseModal = true"
-                        class="mt-3 text-[#2BAE66] hover:text-[#4DA1FF] font-medium"
+                        class="mt-3 text-azul-tiquet hover:text-azul-claro-viaje font-medium text-sm sm:text-base"
                     >
                         Crear tu primer gasto
                     </button>
                 </div>
                 
-                <div v-else class="space-y-4">
+                <div v-else class="space-y-3 sm:space-y-4">
                     <div 
                         v-for="expense in expenses.slice(0, 5)" 
                         :key="expense.id"
-                        class="flex items-center justify-between p-4 bg-[#F4E9D8] rounded-lg hover:bg-[#4DA1FF]/10 transition-colors duration-200"
+                        class="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-marfil-mapamundi rounded-lg hover:bg-azul-claro-viaje/20 transition-colors duration-200 gap-3 sm:gap-0"
                     >
                         <div class="flex-1">
-                            <h3 class="font-medium text-[#2E2E2E]">{{ expense.title }}</h3>
-                            <p class="text-sm text-gray-600">
+                            <h3 class="font-medium text-gris-billetera text-sm sm:text-base">{{ expense.title }}</h3>
+                            <p class="text-xs sm:text-sm text-gray-600">
                                 Pagado por {{ getUserName(expense.paidBy) }} • {{ formatDate(expense.date) }}
                             </p>
                             <p class="text-xs text-gray-500">{{ expense.category }}</p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-lg font-semibold text-[#2E2E2E]">{{ formatMoney(expense.amount) }}</p>
-                            <p class="text-sm text-gray-600">{{ expense.participants.length }} participantes</p>
+                        <div class="text-left sm:text-right">
+                            <p class="text-base sm:text-lg font-semibold text-azul-tiquet">{{ formatMoney(expense.amount) }}</p>
+                            <p class="text-xs sm:text-sm text-gray-600">{{ expense.userIds?.length || 0 }} participantes</p>
                         </div>
                     </div>
                     
@@ -86,7 +95,7 @@
                     <div v-if="expenses.length > 5" class="text-center pt-4">
                         <NuxtLink 
                             to="/expenses"
-                            class="text-[#2BAE66] hover:text-[#4DA1FF] font-medium transition-colors"
+                            class="text-azul-tiquet hover:text-azul-claro-viaje font-medium transition-colors text-sm sm:text-base"
                         >
                             Ver todos los gastos ({{ expenses.length }})
                         </NuxtLink>
@@ -95,12 +104,12 @@
             </div>
 
             <!-- Pagos pendientes -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-[#2E2E2E]">Pagos pendientes</h2>
+            <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Pagos pendientes</h2>
                     <NuxtLink 
                         to="/expenses"
-                        class="text-[#2BAE66] hover:text-[#4DA1FF] text-sm font-medium transition-colors"
+                        class="text-azul-tiquet hover:text-azul-claro-viaje text-sm font-medium transition-colors"
                     >
                         Ver todos los gastos
                     </NuxtLink>
@@ -108,32 +117,35 @@
                 
                 <div v-if="pendingPayments.length === 0" class="text-center py-8 text-gray-500">
                     <div class="text-4xl mb-2">✅</div>
-                    <p>¡Todos los pagos están al día!</p>
+                    <p class="text-sm sm:text-base">¡Todos los pagos están al día!</p>
                 </div>
 
                 <div v-else class="space-y-3">
                     <div 
                         v-for="payment in pendingPayments.slice(0, 5)" 
-                        :key="`${payment.expenseId}-${payment.userId}`"
-                        class="flex items-center justify-between p-3 bg-[#FF6B6B]/5 border border-[#FF6B6B]/20 rounded-lg"
+                        :key="payment.id"
+                        class="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg"
                     >
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-[#FF6B6B] rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                                {{ getUserName(payment.userId).charAt(0).toUpperCase() }}
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                            <div class="flex-1">
+                                <p class="font-medium text-gris-billetera text-sm sm:text-base">{{ payment.title }}</p>
+                                <p class="text-xs sm:text-sm text-gray-600">Pagado por: {{ payment.paidBy }}</p>
+                                <p class="text-xs text-gray-400">{{ formatDate(payment.date) }}</p>
                             </div>
-                            <div>
-                                <p class="font-medium text-[#2E2E2E]">{{ getUserName(payment.userId) }}</p>
-                                <p class="text-sm text-gray-600">{{ payment.expenseTitle }}</p>
+                            <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 sm:gap-2">
+                                <p class="font-semibold text-red-600 text-sm sm:text-base">{{ formatMoney(payment.amount) }}</p>
+                                <button 
+                                    @click="markPaymentAsPaid(payment.id)"
+                                    class="px-3 py-1 bg-lima-compartida text-gris-billetera text-xs rounded-full hover:bg-azul-claro-viaje transition-colors whitespace-nowrap"
+                                >
+                                    Marcar como pagado
+                                </button>
                             </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-semibold text-[#FF6B6B]">{{ formatMoney(payment.amount) }}</p>
-                            <p class="text-xs text-gray-500">Pendiente</p>
                         </div>
                     </div>
                     
                     <div v-if="pendingPayments.length > 5" class="text-center pt-2">
-                        <p class="text-sm text-gray-600">
+                        <p class="text-xs sm:text-sm text-gray-600">
                             Y {{ pendingPayments.length - 5 }} pagos pendientes más...
                         </p>
                     </div>
@@ -141,47 +153,42 @@
             </div>
 
             <!-- Balances por usuario -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-[#2E2E2E]">Balance por usuario</h2>
+                        <!-- Balances por usuario -->
+            <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Balances</h2>
                     <NuxtLink 
                         to="/balances"
-                        class="text-[#2BAE66] hover:text-[#4DA1FF] text-sm font-medium transition-colors"
+                        class="text-azul-tiquet hover:text-azul-claro-viaje text-sm font-medium transition-colors"
                     >
-                        Ver liquidaciones
+                        Ver detalles
                     </NuxtLink>
                 </div>
                 
                 <div v-if="Object.keys(balances).length === 0" class="text-center py-8 text-gray-500">
                     <div class="text-4xl mb-2">👥</div>
-                    <p>No hay usuarios registrados</p>
-                    <NuxtLink 
-                        to="/users"
-                        class="mt-3 inline-block text-[#2BAE66] hover:text-[#4DA1FF] font-medium"
-                    >
-                        Gestionar usuarios
-                    </NuxtLink>
+                    <p class="text-sm sm:text-base">No hay balances calculados</p>
                 </div>
 
-                <div v-else class="space-y-3">
+                <div v-else class="space-y-3 sm:space-y-4">
                     <div 
                         v-for="(balance, userId) in balances" 
                         :key="userId"
-                        class="flex items-center justify-between p-3 bg-[#F4E9D8] rounded-lg"
+                        class="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-marfil-mapamundi rounded-lg gap-3 sm:gap-0"
                     >
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-[#2BAE66] rounded-full flex items-center justify-center text-white font-semibold">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-semibold text-sm sm:text-base">
                                 {{ getUserName(parseInt(userId)).charAt(0).toUpperCase() }}
                             </div>
                             <div>
-                                <span class="font-medium text-[#2E2E2E]">{{ getUserName(parseInt(userId)) }}</span>
-                                <span v-if="parseInt(userId) === currentUser?.id" class="ml-2 text-xs px-2 py-1 bg-[#2BAE66]/10 text-[#2BAE66] rounded-full">
+                                <span class="font-medium text-gris-billetera text-sm sm:text-base">{{ getUserName(parseInt(userId)) }}</span>
+                                <span v-if="parseInt(userId) === currentUser?.id" class="ml-2 text-xs px-2 py-1 bg-lima-compartida/20 text-gris-billetera rounded-full">
                                     Tú
                                 </span>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-semibold" :class="balance.balance >= 0 ? 'text-[#2BAE66]' : 'text-[#FF6B6B]'">
+                        <div class="text-left sm:text-right">
+                            <p class="font-semibold text-sm sm:text-base" :class="balance.balance >= 0 ? 'text-azul-tiquet' : 'text-red-500'">
                                 {{ formatMoney(balance.balance) }}
                             </p>
                             <p class="text-xs text-gray-500">
@@ -217,25 +224,36 @@ const alertStore = useAlertStore()
 const showAddExpenseModal = ref(false)
 
 // Computed properties
-const expenses = computed(() => expenseStore.getAllExpenses)
+const expenses = computed(() => {
+    const allExpenses = expenseStore.getAllExpenses
+    return Array.isArray(allExpenses) ? allExpenses : []
+})
 
 const pendingPayments = computed(() => {
     const currentUser = userStore.currentUser
     if (!currentUser) return []
     
+    const allExpenses = expenseStore.getAllExpenses
+    if (!allExpenses || !Array.isArray(allExpenses)) return []
+    
     const pending = []
     
-    expenseStore.getAllExpenses.forEach(expense => {
+    allExpenses.forEach(expense => {
+        // Validar que el expense tenga las propiedades necesarias
+        if (!expense || !expense.userIds || !Array.isArray(expense.userIds) || !expense.amount || !expense.id) {
+            return
+        }
+        
         const userAmount = expense.amount / expense.userIds.length
         const isUserPaid = expenseStore.getUserPaymentStatus(currentUser.id, expense.id)
         
         if (expense.userIds.includes(currentUser.id) && !isUserPaid) {
             pending.push({
                 id: expense.id,
-                title: expense.title,
+                title: expense.title || 'Sin título',
                 amount: userAmount,
                 paidBy: userStore.getUserById(expense.paidBy)?.name || 'Usuario desconocido',
-                date: expense.date
+                date: expense.date || new Date().toISOString()
             })
         }
     })

@@ -1,24 +1,24 @@
 <template>
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+        <div class="bg-blanco-dividido rounded-lg shadow-xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
             <!-- Header -->
-            <div class="flex items-center justify-between p-6 border-b">
-                <h2 class="text-xl font-semibold text-[#2E2E2E]">Añadir nuevo gasto</h2>
+            <div class="flex items-center justify-between p-4 sm:p-6 border-b">
+                <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Añadir nuevo gasto</h2>
                 <button 
                     @click="$emit('close')"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                    class="text-gray-400 hover:text-gray-600 transition-colors p-1"
                 >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <!-- Form -->
-            <form @submit.prevent="submitExpense" class="p-6 space-y-4">
+            <form @submit.prevent="submitExpense" class="p-4 sm:p-6 space-y-4">
                 <!-- Título -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Título del gasto
                     </label>
                     <input
@@ -26,13 +26,13 @@
                         type="text"
                         required
                         placeholder="Ej: Cena en el restaurante"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                 </div>
 
                 <!-- Cantidad -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Cantidad (€)
                     </label>
                     <input
@@ -42,19 +42,19 @@
                         min="0"
                         required
                         placeholder="0.00"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                 </div>
 
                 <!-- Categoría -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Categoría
                     </label>
                     <select
                         v-model="formData.category"
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                         <option value="">Selecciona una categoría</option>
                         <option value="Comida">Comida</option>
@@ -68,26 +68,26 @@
 
                 <!-- Descripción -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Descripción (opcional)
                     </label>
                     <textarea
                         v-model="formData.description"
                         rows="3"
                         placeholder="Descripción del gasto..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent resize-none"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent resize-none"
                     ></textarea>
                 </div>
 
                 <!-- Quién pagó -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Quién pagó
                     </label>
                     <select
                         v-model="formData.paidBy"
                         required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                         <option value="">Selecciona quién pagó</option>
                         <option v-for="user in users" :key="user.id" :value="user.id">
@@ -98,40 +98,40 @@
 
                 <!-- Participantes -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">
                         Participantes
                     </label>
-                    <div class="space-y-2 max-h-32 overflow-y-auto">
+                    <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
                         <label 
                             v-for="user in users" 
                             :key="user.id"
-                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-[#F4E9D8] cursor-pointer"
+                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-marfil-mapamundi cursor-pointer"
                         >
                             <input
                                 type="checkbox"
                                 :value="user.id"
                                 v-model="formData.participants"
-                                class="w-4 h-4 text-[#2BAE66] border-gray-300 rounded focus:ring-[#2BAE66]"
+                                class="w-4 h-4 text-azul-tiquet border-gray-300 rounded focus:ring-azul-tiquet"
                             >
-                            <span class="text-sm text-[#2E2E2E]">{{ user.name }}</span>
+                            <span class="text-sm text-gris-billetera">{{ user.name }}</span>
                         </label>
                     </div>
-                    <p v-if="formData.participants.length === 0" class="text-sm text-[#FF6B6B] mt-1">
+                    <p v-if="formData.participants.length === 0" class="text-xs sm:text-sm text-red-500 mt-1">
                         Debes seleccionar al menos un participante
                     </p>
                 </div>
 
                 <!-- División del gasto -->
                 <div v-if="formData.participants.length > 0 && formData.amount > 0" class="border-t pt-4">
-                    <h3 class="text-sm font-medium text-[#2E2E2E] mb-2">División del gasto</h3>
-                    <div class="space-y-2">
+                    <h3 class="text-sm font-medium text-gris-billetera mb-2">División del gasto</h3>
+                    <div class="space-y-2 max-h-24 overflow-y-auto">
                         <div 
                             v-for="participantId in formData.participants" 
                             :key="participantId"
-                            class="flex items-center justify-between p-2 bg-[#F4E9D8] rounded-lg"
+                            class="flex items-center justify-between p-2 bg-marfil-mapamundi border rounded-lg"
                         >
-                            <span class="text-sm text-[#2E2E2E]">{{ getUserName(participantId) }}</span>
-                            <span class="text-sm font-medium text-[#2BAE66]">
+                            <span class="text-xs sm:text-sm text-gris-billetera">{{ getUserName(participantId) }}</span>
+                            <span class="text-xs sm:text-sm font-medium text-azul-tiquet">
                                 {{ formatMoney(formData.amount / formData.participants.length) }}
                             </span>
                         </div>
@@ -139,18 +139,18 @@
                 </div>
 
                 <!-- Botones -->
-                <div class="flex gap-3 pt-4">
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
                     <button
                         type="button"
                         @click="$emit('close')"
-                        class="flex-1 px-4 py-2 text-[#2E2E2E] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        class="flex-1 px-4 py-2 text-sm sm:text-base text-gris-billetera border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         :disabled="!isFormValid"
-                        class="flex-1 px-4 py-2 bg-[#2BAE66] text-white rounded-lg hover:bg-[#4DA1FF] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        class="flex-1 px-4 py-2 text-sm sm:text-base bg-lima-compartida text-gris-billetera rounded-lg hover:bg-azul-claro-viaje disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                     >
                         Añadir gasto
                     </button>

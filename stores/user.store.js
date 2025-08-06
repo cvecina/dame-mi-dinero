@@ -22,10 +22,8 @@ export const useUserStore = defineStore({
                 const response = await $fetch('/api/users')
                 this.users = response.data || []
                 
-                // Si no hay usuario actual, establecer el primero como actual
-                if (!this.currentUser && this.users.length > 0) {
-                    this.currentUser = this.users[0]
-                }
+                // No establecer automáticamente un usuario actual
+                // Dejar que el usuario elija manualmente
                 
                 console.log('fetchUsers')
                 return this.users
@@ -48,10 +46,8 @@ export const useUserStore = defineStore({
                 const newUser = response.data
                 this.users.push(newUser)
                 
-                // Si es el primer usuario, establecerlo como actual
-                if (!this.currentUser) {
-                    this.currentUser = newUser
-                }
+                // No establecer automáticamente como usuario actual
+                // Dejar que lo seleccione manualmente
                 
                 console.log('addUser')
                 return newUser
@@ -118,12 +114,32 @@ export const useUserStore = defineStore({
         
         setCurrentUser(user) {
             this.currentUser = user
+            // Guardar en localStorage para persistencia
+            if (typeof window !== 'undefined') {
+                if (user) {
+                    localStorage.setItem('currentUserId', user.id.toString())
+                } else {
+                    localStorage.removeItem('currentUserId')
+                }
+            }
             console.log('setCurrentUser')
         },
         
         async initializeUsers() {
             try {
                 await this.fetchUsers()
+                
+                // Intentar restaurar el usuario actual desde localStorage
+                if (typeof window !== 'undefined') {
+                    const savedUserId = localStorage.getItem('currentUserId')
+                    if (savedUserId && this.users.length > 0) {
+                        const savedUser = this.users.find(user => user.id.toString() === savedUserId)
+                        if (savedUser) {
+                            this.currentUser = savedUser
+                        }
+                    }
+                }
+                
                 console.log('initializeUsers')
             } catch (error) {
                 console.error('Error al inicializar usuarios:', error)

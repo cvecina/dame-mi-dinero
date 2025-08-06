@@ -24,12 +24,12 @@
 - Use this colors for the app
 | Nombre           | HEX       | Uso                                                  |
 | ---------------- | --------- | ---------------------------------------------------- |
-| Verde Formentera | `#2BAE66` | Color principal (encabezados, botones primarios)     |
-| Gris Carbón      | `#2E2E2E` | Texto, fondo oscuro, elementos estructurales         |
-| Coral Digital    | `#FF6B6B` | Acentos, llamada a la acción (botones secundarios)   |
-| Azul Marítimo    | `#4DA1FF` | Hover, enlaces, detalles interactivos                |
-| Arena Suave      | `#F4E9D8` | Fondos secundarios, tarjetas, secciones alternativas |
-| Blanco Espuma    | `#FAFAFA` | Fondos limpios, texto invertido                      |
+| Azul Tiquet      | `#3A7CA5` | Color principal (encabezados, botones primarios)     |
+| Gris Billetera   | `#3C3C3C` | Texto principal, fondo oscuro, estructura            |
+| Lima Compartida  | `#A8E000` | Acentos, llamadas a la acción (añadir gasto, saldar) |
+| Azul Claro Viaje | `#A9D6E5` | Hover, enlaces, detalles interactivos                |
+| Marfil Mapamundi | `#F6F5F2` | Fondos secundarios, tarjetas, secciones alternativas |
+| Blanco Dividido  | `#FFFFFF` | Fondos limpios, texto invertido                      |
 
 - Use Soft style for everithing, including buttons, inputs, and other UI elements
 

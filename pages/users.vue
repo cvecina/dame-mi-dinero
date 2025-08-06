@@ -1,25 +1,25 @@
 <template>
-    <div class="min-h-screen bg-[#FAFAFA] p-4">
+    <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
         <!-- Loading state -->
         <div v-if="isLoading" class="flex items-center justify-center py-20">
             <div class="text-center">
-                <div class="w-16 h-16 border-4 border-[#2BAE66] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-[#2E2E2E] font-medium">Cargando usuarios...</p>
+                <div class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gris-billetera font-medium">Cargando usuarios...</p>
             </div>
         </div>
 
-        <!-- Main content -->
+        <!-- Main content - La página de usuarios siempre se muestra -->
         <div v-else>
             <!-- Header -->
-            <div class="flex items-center justify-between mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
                 <div>
-                    <h1 class="text-3xl font-bold text-[#2E2E2E] mb-2">Gestión de usuarios</h1>
-                    <p class="text-gray-600">Administra los usuarios del grupo</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Gestión de usuarios</h1>
+                    <p class="text-sm sm:text-base text-gray-600">Administra los usuarios del grupo</p>
                 </div>
                 <button 
                     @click="showAddUserModal = true"
                     :disabled="userStore.isLoading"
-                    class="bg-[#2BAE66] hover:bg-[#4DA1FF] text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                    class="w-full sm:w-auto bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start gap-2 disabled:opacity-50"
                 >
                     <span class="text-xl">+</span>
                     Añadir usuario
@@ -27,27 +27,27 @@
             </div>
 
         <!-- Lista de usuarios -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold text-[#2E2E2E] mb-6">
+        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera mb-6">
                 {{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} en el grupo
             </h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div 
                     v-for="user in users" 
                     :key="user.id"
-                    class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200"
+                    class="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow duration-200"
                 >
                     <!-- Avatar y nombre -->
-                    <div class="flex items-center gap-4 mb-4">
-                        <div class="w-16 h-16 bg-[#2BAE66] rounded-full flex items-center justify-center text-white text-xl font-bold">
+                    <div class="flex items-center gap-3 sm:gap-4 mb-4">
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-lg sm:text-xl font-bold">
                             {{ user.name.charAt(0).toUpperCase() }}
                         </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-[#2E2E2E]">{{ user.name }}</h3>
+                        <div class="flex-1">
+                            <h3 class="text-base sm:text-lg font-semibold text-gris-billetera">{{ user.name }}</h3>
                             <span 
                                 v-if="user.id === currentUser.id" 
-                                class="inline-block mt-1 px-2 py-1 text-xs font-medium bg-[#2BAE66]/10 text-[#2BAE66] rounded-full"
+                                class="inline-block mt-1 px-2 py-1 text-xs font-medium bg-lima-compartida/10 text-azul-tiquet rounded-full"
                             >
                                 Tú
                             </span>
@@ -60,7 +60,7 @@
                             <span class="text-sm text-gray-600">Balance actual</span>
                             <span 
                                 class="font-semibold"
-                                :class="getUserBalance(user.id) >= 0 ? 'text-[#2BAE66]' : 'text-[#FF6B6B]'"
+                                :class="getUserBalance(user.id) >= 0 ? 'text-lima-compartida' : 'text-red-500'"
                             >
                                 {{ formatMoney(getUserBalance(user.id)) }}
                             </span>
@@ -68,14 +68,14 @@
                         
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Total pagado</span>
-                            <span class="font-semibold text-[#2E2E2E]">
+                            <span class="font-semibold text-gris-billetera">
                                 {{ formatMoney(getUserTotalPaid(user.id)) }}
                             </span>
                         </div>
                         
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Gastos participados</span>
-                            <span class="font-semibold text-[#4DA1FF]">
+                            <span class="font-semibold text-azul-claro-viaje">
                                 {{ getUserExpenseCount(user.id) }}
                             </span>
                         </div>
@@ -86,14 +86,14 @@
                         <button 
                             @click="setAsCurrentUser(user)"
                             :disabled="user.id === currentUser.id"
-                            class="flex-1 px-3 py-2 text-sm bg-[#4DA1FF]/10 text-[#4DA1FF] rounded-lg hover:bg-[#4DA1FF]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            class="flex-1 px-3 py-2 text-sm bg-azul-claro-viaje/10 text-azul-tiquet rounded-lg hover:bg-azul-claro-viaje/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {{ user.id === currentUser.id ? 'Usuario actual' : 'Cambiar a este usuario' }}
                         </button>
                         <button 
                             v-if="user.id !== currentUser.id"
                             @click="deleteUser(user.id)"
-                            class="px-3 py-2 text-sm text-[#FF6B6B] hover:bg-[#FF6B6B]/10 rounded-lg transition-colors"
+                            class="px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                         >
                             Eliminar
                         </button>

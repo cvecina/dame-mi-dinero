@@ -1,25 +1,34 @@
 <template>
-    <div class="min-h-screen bg-[#FAFAFA] p-4">
+    <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
         <!-- Loading state -->
         <div v-if="isLoading" class="flex items-center justify-center py-20">
             <div class="text-center">
-                <div class="w-16 h-16 border-4 border-[#2BAE66] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-[#2E2E2E] font-medium">Cargando gastos...</p>
+                <div class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gris-billetera font-medium">Cargando gastos...</p>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando no hay usuario seleccionado -->
+        <div v-else-if="!currentUser" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <div class="text-6xl mb-4">💸</div>
+                <h2 class="text-xl font-semibold text-gris-billetera mb-2">Selecciona tu usuario</h2>
+                <p class="text-gray-600">Necesitas seleccionar un usuario para ver los gastos</p>
             </div>
         </div>
 
         <!-- Main content -->
         <div v-else>
             <!-- Header -->
-            <div class="flex items-center justify-between mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
                 <div>
-                    <h1 class="text-3xl font-bold text-[#2E2E2E] mb-2">Todos los gastos</h1>
-                    <p class="text-gray-600">Historial completo de gastos compartidos</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Todos los gastos</h1>
+                    <p class="text-sm sm:text-base text-gray-600">Historial completo de gastos compartidos</p>
                 </div>
                 <button 
                     @click="showAddExpenseModal = true"
-                    :disabled="expenseStore.isLoading"
-                    class="bg-[#2BAE66] hover:bg-[#4DA1FF] text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                    :disabled="expenseStore.isLoading || !currentUser"
+                    class="w-full sm:w-auto bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start gap-2 disabled:opacity-50"
                 >
                     <span class="text-xl">+</span>
                     Nuevo gasto
@@ -27,15 +36,15 @@
             </div>
 
         <!-- Filtros -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg font-semibold text-[#2E2E2E] mb-4">Filtros</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+            <h2 class="text-base sm:text-lg font-semibold text-gris-billetera mb-4">Filtros</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- Filtro por categoría -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">Categoría</label>
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">Categoría</label>
                     <select
                         v-model="filters.category"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                         <option value="">Todas las categorías</option>
                         <option value="Comida">Comida</option>
@@ -49,10 +58,10 @@
 
                 <!-- Filtro por usuario -->
                 <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">Usuario</label>
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">Usuario</label>
                     <select
                         v-model="filters.user"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                         <option value="">Todos los usuarios</option>
                         <option v-for="user in users" :key="user.id" :value="user.id">
@@ -62,11 +71,11 @@
                 </div>
 
                 <!-- Ordenar por -->
-                <div>
-                    <label class="block text-sm font-medium text-[#2E2E2E] mb-2">Ordenar por</label>
+                <div class="sm:col-span-2 lg:col-span-1">
+                    <label class="block text-sm font-medium text-gris-billetera mb-2">Ordenar por</label>
                     <select
                         v-model="filters.sortBy"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2BAE66] focus:border-transparent"
+                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
                     >
                         <option value="date-desc">Fecha (más reciente)</option>
                         <option value="date-asc">Fecha (más antiguo)</option>
@@ -78,9 +87,9 @@
         </div>
 
         <!-- Lista de gastos -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-[#2E2E2E]">
+        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
+                <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">
                     {{ filteredExpenses.length }} gasto{{ filteredExpenses.length !== 1 ? 's' : '' }}
                 </h2>
                 <div class="text-sm text-gray-600">
@@ -89,27 +98,27 @@
             </div>
 
             <div v-if="filteredExpenses.length === 0" class="text-center py-12 text-gray-500">
-                <div class="text-6xl mb-4">💸</div>
-                <p class="text-lg">No hay gastos que coincidan con los filtros</p>
+                <div class="text-4xl sm:text-6xl mb-4">💸</div>
+                <p class="text-base sm:text-lg">No hay gastos que coincidan con los filtros</p>
             </div>
 
-            <div v-else class="space-y-4">
+            <div v-else class="space-y-3 sm:space-y-4">
                 <div 
                     v-for="expense in filteredExpenses" 
                     :key="expense.id"
                     class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
                 >
-                    <div class="flex items-start justify-between">
+                    <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                         <!-- Información principal -->
                         <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <h3 class="text-lg font-semibold text-[#2E2E2E]">{{ expense.title }}</h3>
-                                <span class="px-2 py-1 text-xs font-medium bg-[#4DA1FF]/10 text-[#4DA1FF] rounded-full">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                                <h3 class="text-base sm:text-lg font-semibold text-gris-billetera">{{ expense.title }}</h3>
+                                <span class="px-2 py-1 text-xs font-medium bg-azul-claro-viaje/10 text-azul-tiquet rounded-full w-fit">
                                     {{ expense.category }}
                                 </span>
                             </div>
                             
-                            <div class="space-y-1 text-sm text-gray-600 mb-3">
+                            <div class="space-y-1 text-xs sm:text-sm text-gray-600 mb-3">
                                 <p>
                                     <span class="font-medium">Pagado por:</span> 
                                     {{ getUserName(expense.paidBy) }}
@@ -126,35 +135,36 @@
 
                             <!-- Participantes y división -->
                             <div class="mt-3">
-                                <p class="text-sm font-medium text-[#2E2E2E] mb-2">
+                                <p class="text-xs sm:text-sm font-medium text-gris-billetera mb-2">
                                     División entre {{ expense.participants.length }} participantes:
                                 </p>
-                                <div class="flex flex-wrap gap-2 mb-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
                                     <div 
                                         v-for="split in expense.splits" 
                                         :key="split.userId"
-                                        class="bg-[#F4E9D8] px-3 py-1 rounded-full text-sm"
+                                        class="bg-marfil-mapamundi px-3 py-2 rounded-lg text-xs sm:text-sm border"
                                     >
-                                        {{ getUserName(split.userId) }}: {{ formatMoney(split.amount) }}
+                                        <div class="font-medium">{{ getUserName(split.userId) }}</div>
+                                        <div class="text-gray-600">{{ formatMoney(split.amount) }}</div>
                                     </div>
                                 </div>
 
                                 <!-- Estado de pagos individuales -->
                                 <div class="border-t pt-3">
-                                    <p class="text-sm font-medium text-[#2E2E2E] mb-2">
+                                    <p class="text-xs sm:text-sm font-medium text-gris-billetera mb-2">
                                         Estado de pagos:
                                     </p>
-                                    <div class="space-y-2">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         <div 
                                             v-for="participant in expense.participants" 
                                             :key="participant"
-                                            class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg"
+                                            class="flex flex-col sm:flex-row sm:items-center justify-between py-2 px-3 bg-gray-50 rounded-lg gap-2 sm:gap-0"
                                         >
                                             <div class="flex items-center gap-2">
-                                                <div class="w-6 h-6 bg-[#2BAE66] rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                                <div class="w-6 h-6 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-xs font-semibold">
                                                     {{ getUserName(participant).charAt(0).toUpperCase() }}
                                                 </div>
-                                                <span class="text-sm font-medium">{{ getUserName(participant) }}</span>
+                                                <span class="text-xs sm:text-sm font-medium">{{ getUserName(participant) }}</span>
                                                 <span class="text-xs text-gray-600">
                                                     ({{ formatMoney(getUserAmountInExpense(expense, participant)) }})
                                                 </span>
@@ -163,9 +173,9 @@
                                             <button
                                                 @click="togglePaymentStatus(expense.id, participant)"
                                                 :class="[
-                                                    'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                                    'px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap',
                                                     getUserPaymentStatus(expense.id, participant) 
-                                                        ? 'bg-[#2BAE66] text-white hover:bg-green-600' 
+                                                        ? 'bg-lima-compartida text-gris-billetera hover:bg-azul-claro-viaje' 
                                                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                                 ]"
                                             >
@@ -178,11 +188,11 @@
                         </div>
 
                         <!-- Cantidad total -->
-                        <div class="text-right ml-4">
-                            <p class="text-2xl font-bold text-[#2BAE66]">{{ formatMoney(expense.amount) }}</p>
+                        <div class="text-left lg:text-right lg:ml-4 pt-3 lg:pt-0 border-t lg:border-t-0">
+                            <p class="text-xl sm:text-2xl font-bold text-azul-tiquet">{{ formatMoney(expense.amount) }}</p>
                             <button 
                                 @click="deleteExpense(expense.id)"
-                                class="mt-2 text-[#FF6B6B] hover:text-red-700 text-sm font-medium transition-colors"
+                                class="mt-2 text-red-500 hover:text-red-700 text-sm font-medium transition-colors"
                             >
                                 Eliminar
                             </button>
@@ -224,6 +234,7 @@ const filters = ref({
 // Computed properties
 const expenses = computed(() => expenseStore.getAllExpenses)
 const users = computed(() => userStore.getAllUsers)
+const currentUser = computed(() => userStore.getCurrentUser)
 const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading)
 
 const filteredExpenses = computed(() => {

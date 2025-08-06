@@ -1,55 +1,58 @@
 <template>
-  <div class="wrapper flex flex-col min-h-screen bg-[#FAFAFA]">
+  <div class="wrapper flex flex-col min-h-screen bg-marfil-mapamundi">
     <!-- Navegación -->
-    <nav class="bg-white shadow-md border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4">
+    <nav class="bg-blanco-dividido shadow-md border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <div class="flex items-center">
-            <NuxtLink to="/" class="flex items-center gap-3">
+            <NuxtLink to="/" class="flex items-center gap-2 sm:gap-3">
               <div
-                class="w-8 h-8 bg-[#2BAE66] rounded-lg flex items-center justify-center"
+                class="w-8 h-8 bg-azul-tiquet rounded-lg flex items-center justify-center"
               >
-                <span class="text-white font-bold text-lg">€</span>
+                <span class="text-blanco-dividido font-bold text-lg">€</span>
               </div>
-              <span class="text-xl font-bold text-[#2E2E2E]"
+              <span class="text-lg sm:text-xl font-bold text-gris-billetera hidden sm:block"
                 >Dame mi dinero</span
+              >
+              <span class="text-lg font-bold text-gris-billetera sm:hidden"
+                >DMD</span
               >
             </NuxtLink>
           </div>
 
-          <!-- Menú de navegación -->
+          <!-- Menú de navegación - Desktop -->
           <div class="hidden md:flex items-center space-x-6">
             <NuxtLink
               to="/"
-              class="text-[#2E2E2E] hover:text-[#2BAE66] px-3 py-2 rounded-lg font-medium transition-colors"
-              :class="{ 'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/' }"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
+              :class="{ 'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/' }"
             >
               Dashboard
             </NuxtLink>
             <NuxtLink
               to="/expenses"
-              class="text-[#2E2E2E] hover:text-[#2BAE66] px-3 py-2 rounded-lg font-medium transition-colors"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/expenses',
+                'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/expenses',
               }"
             >
               Gastos
             </NuxtLink>
             <NuxtLink
               to="/balances"
-              class="text-[#2E2E2E] hover:text-[#2BAE66] px-3 py-2 rounded-lg font-medium transition-colors"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/balances',
+                'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/balances',
               }"
             >
               Balances
             </NuxtLink>
             <NuxtLink
               to="/users"
-              class="text-[#2E2E2E] hover:text-[#2BAE66] px-3 py-2 rounded-lg font-medium transition-colors"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/users',
+                'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/users',
               }"
             >
               Usuarios
@@ -57,25 +60,14 @@
           </div>
 
           <!-- Usuario actual y menú móvil -->
-          <div class="flex items-center gap-4">
-            <!-- Usuario actual -->
-            <div
-              class="hidden sm:flex items-center gap-2 bg-[#F4E9D8] px-3 py-2 rounded-lg"
-            >
-              <div
-                class="w-8 h-8 bg-[#2BAE66] rounded-full flex items-center justify-center text-white text-sm font-semibold"
-              >
-                {{ currentUser?.name?.charAt(0)?.toUpperCase() || "U" }}
-              </div>
-              <span class="text-sm font-medium text-[#2E2E2E]">{{
-                currentUser?.name || "Usuario"
-              }}</span>
-            </div>
+          <div class="flex items-center gap-2 sm:gap-4">
+            <!-- Selector de usuario -->
+            <UserSelector />
 
             <!-- Botón menú móvil -->
             <button
               @click="showMobileMenu = !showMobileMenu"
-              class="md:hidden p-2 text-[#2E2E2E] hover:text-[#2BAE66] transition-colors"
+              class="md:hidden p-2 text-gris-billetera hover:text-azul-tiquet transition-colors"
             >
               <svg
                 class="w-6 h-6"
@@ -87,7 +79,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M4 6h16M4 12h16M4 18h16"
+                  :d="showMobileMenu ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'"
                 ></path>
               </svg>
             </button>
@@ -103,17 +95,17 @@
             <NuxtLink
               to="/"
               @click="showMobileMenu = false"
-              class="block px-3 py-2 text-[#2E2E2E] hover:text-[#2BAE66] hover:bg-[#2BAE66]/10 rounded-lg font-medium transition-colors"
-              :class="{ 'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/' }"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
+              :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/' }"
             >
               Dashboard
             </NuxtLink>
             <NuxtLink
               to="/expenses"
               @click="showMobileMenu = false"
-              class="block px-3 py-2 text-[#2E2E2E] hover:text-[#2BAE66] hover:bg-[#2BAE66]/10 rounded-lg font-medium transition-colors"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/expenses',
+                'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/expenses',
               }"
             >
               Gastos
@@ -121,9 +113,9 @@
             <NuxtLink
               to="/balances"
               @click="showMobileMenu = false"
-              class="block px-3 py-2 text-[#2E2E2E] hover:text-[#2BAE66] hover:bg-[#2BAE66]/10 rounded-lg font-medium transition-colors"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/balances',
+                'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/balances',
               }"
             >
               Balances
@@ -131,9 +123,9 @@
             <NuxtLink
               to="/users"
               @click="showMobileMenu = false"
-              class="block px-3 py-2 text-[#2E2E2E] hover:text-[#2BAE66] hover:bg-[#2BAE66]/10 rounded-lg font-medium transition-colors"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
               :class="{
-                'text-[#2BAE66] bg-[#2BAE66]/10': $route.path === '/users',
+                'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/users',
               }"
             >
               Usuarios
@@ -144,12 +136,12 @@
           <div class="sm:hidden mt-4 pt-4 border-t border-gray-200">
             <div class="flex items-center gap-3 px-3">
               <div
-                class="w-10 h-10 bg-[#2BAE66] rounded-full flex items-center justify-center text-white font-semibold"
+                class="w-10 h-10 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-semibold"
               >
                 {{ currentUser?.name?.charAt(0)?.toUpperCase() || "U" }}
               </div>
               <div>
-                <p class="font-medium text-[#2E2E2E]">
+                <p class="font-medium text-gris-billetera">
                   {{ currentUser?.name || "Usuario" }}
                 </p>
               </div>
@@ -170,6 +162,9 @@
 
     <!-- Toast/Alert -->
     <Toast />
+
+    <!-- Modal de bienvenida para seleccionar usuario -->
+    <UserWelcomeModal />
   </div>
 </template>
 
