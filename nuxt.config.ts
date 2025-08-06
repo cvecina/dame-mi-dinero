@@ -37,7 +37,8 @@ export default defineNuxtConfig({
     // '@nuxtjs/i18n',
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    '@vite-pwa/nuxt'
     //'@nuxt/image',
   ],
 
@@ -55,6 +56,40 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'light', // default theme
     dataValue: 'theme', // activate data-theme in <html> tag
+  },
+
+  // Configuración PWA (usando @vite-pwa/nuxt)
+  vitePwa: {
+    registerType: 'autoUpdate',
+    workbox: {
+      navigateFallback: '/',
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+    },
+    manifest: {
+      name: 'Dame Mi Dinero',
+      short_name: 'DameMiDinero',
+      description: 'Aplicación para controlar gastos compartidos con amigos',
+      theme_color: '#3A7CA5',
+      background_color: '#F6F5F2',
+      display: 'standalone',
+      orientation: 'portrait',
+      scope: '/',
+      start_url: '/',
+      lang: 'es',
+      categories: ['finance', 'productivity', 'utilities'],
+      icons: [
+        {
+          src: '/icon.svg',
+          sizes: 'any',
+          type: 'image/svg+xml'
+        },
+        {
+          src: '/favicon.ico',
+          sizes: '32x32',
+          type: 'image/x-icon'
+        }
+      ]
+    }
   },
 
   // Configuración de almacenamiento persistente
