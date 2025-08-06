@@ -41,31 +41,24 @@ export const useExpenseStore = defineStore({
                 const amount = parseFloat(expense.amount);
                 balances[expense.paidBy].paid += amount;
                 
-                // 2. Calcular lo que cada participante debe según los splits
+                // 2. Calcular lo que cada participante debe
                 expense.splits.forEach(split => {
                     const userId = parseInt(split.userId);
                     const amountOwed = parseFloat(split.amount);
                     
-                    // Todos deben su parte, incluido el pagador original
-                    balances[userId].owes += amountOwed;
+                    // Solo agregar deuda si NO ha pagado individualmente
+                    const hasPaidIndividually = expense.payments && expense.payments[userId];
+                    
+                    if (!hasPaidIndividually) {
+                        balances[userId].owes += amountOwed;
+                    }
+                    // Si pagó individualmente, agregamos ese pago (excepto el pagador original)
+                    else if (userId !== expense.paidBy) {
+                        balances[userId].paid += amountOwed;
+                    }
+                    // Si el pagador original "pagó individualmente", no hacemos nada extra
+                    // porque ya registramos su pago completo arriba
                 });
-                
-                // 3. Procesar pagos individuales adicionales
-                if (expense.payments) {
-                    Object.entries(expense.payments).forEach(([userIdStr, hasPaid]) => {
-                        if (hasPaid) {
-                            const userId = parseInt(userIdStr);
-                            const userSplit = expense.splits.find(s => parseInt(s.userId) === userId);
-                            
-                            // Solo agregar pago individual si NO es el pagador original
-                            // (el pagador original ya tiene registrado su pago completo)
-                            if (userSplit && userId !== expense.paidBy) {
-                                const paidAmount = parseFloat(userSplit.amount);
-                                balances[userId].paid += paidAmount;
-                            }
-                        }
-                    });
-                }
             });
             
             // Calcular balance final: lo que pagó menos lo que debe
