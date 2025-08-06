@@ -129,13 +129,49 @@
                                 <p class="text-sm font-medium text-[#2E2E2E] mb-2">
                                     División entre {{ expense.participants.length }} participantes:
                                 </p>
-                                <div class="flex flex-wrap gap-2">
+                                <div class="flex flex-wrap gap-2 mb-3">
                                     <div 
                                         v-for="split in expense.splits" 
                                         :key="split.userId"
                                         class="bg-[#F4E9D8] px-3 py-1 rounded-full text-sm"
                                     >
                                         {{ getUserName(split.userId) }}: {{ formatMoney(split.amount) }}
+                                    </div>
+                                </div>
+
+                                <!-- Estado de pagos individuales -->
+                                <div class="border-t pt-3">
+                                    <p class="text-sm font-medium text-[#2E2E2E] mb-2">
+                                        Estado de pagos:
+                                    </p>
+                                    <div class="space-y-2">
+                                        <div 
+                                            v-for="participant in expense.participants" 
+                                            :key="participant"
+                                            class="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg"
+                                        >
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-6 h-6 bg-[#2BAE66] rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                                    {{ getUserName(participant).charAt(0).toUpperCase() }}
+                                                </div>
+                                                <span class="text-sm font-medium">{{ getUserName(participant) }}</span>
+                                                <span class="text-xs text-gray-600">
+                                                    ({{ formatMoney(getUserAmountInExpense(expense, participant)) }})
+                                                </span>
+                                            </div>
+                                            
+                                            <button
+                                                @click="togglePaymentStatus(expense.id, participant)"
+                                                :class="[
+                                                    'px-3 py-1 rounded-full text-xs font-medium transition-colors',
+                                                    getUserPaymentStatus(expense.id, participant) 
+                                                        ? 'bg-[#2BAE66] text-white hover:bg-green-600' 
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                ]"
+                                            >
+                                                {{ getUserPaymentStatus(expense.id, participant) ? '✓ Pagado' : 'Marcar como pagado' }}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -262,6 +298,32 @@ const deleteExpense = async (expenseId) => {
         }
     }
     console.log('deleteExpense')
+}
+
+const togglePaymentStatus = async (expenseId, userId) => {
+    try {
+        const currentStatus = expenseStore.getUserPaymentStatus(expenseId, userId)
+        await expenseStore.markUserPayment(expenseId, userId, !currentStatus)
+        
+        const userName = getUserName(userId)
+        if (!currentStatus) {
+            alertStore.success(`${userName} marcado como pagado`)
+        } else {
+            alertStore.info(`Pago de ${userName} desmarcado`)
+        }
+    } catch (error) {
+        console.error('Error al marcar pago:', error)
+        alertStore.error('Error al actualizar estado de pago: ' + (error.message || 'Error desconocido'))
+    }
+}
+
+const getUserPaymentStatus = (expenseId, userId) => {
+    return expenseStore.getUserPaymentStatus(expenseId, userId)
+}
+
+const getUserAmountInExpense = (expense, userId) => {
+    const split = expense.splits?.find(s => s.userId === userId)
+    return split ? split.amount : 0
 }
 
 const onExpenseAdded = async () => {

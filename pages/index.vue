@@ -94,6 +94,52 @@
                 </div>
             </div>
 
+            <!-- Pagos pendientes -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-[#2E2E2E]">Pagos pendientes</h2>
+                    <NuxtLink 
+                        to="/expenses"
+                        class="text-[#2BAE66] hover:text-[#4DA1FF] text-sm font-medium transition-colors"
+                    >
+                        Ver todos los gastos
+                    </NuxtLink>
+                </div>
+                
+                <div v-if="pendingPayments.length === 0" class="text-center py-8 text-gray-500">
+                    <div class="text-4xl mb-2">✅</div>
+                    <p>¡Todos los pagos están al día!</p>
+                </div>
+
+                <div v-else class="space-y-3">
+                    <div 
+                        v-for="payment in pendingPayments.slice(0, 5)" 
+                        :key="`${payment.expenseId}-${payment.userId}`"
+                        class="flex items-center justify-between p-3 bg-[#FF6B6B]/5 border border-[#FF6B6B]/20 rounded-lg"
+                    >
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-[#FF6B6B] rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                                {{ getUserName(payment.userId).charAt(0).toUpperCase() }}
+                            </div>
+                            <div>
+                                <p class="font-medium text-[#2E2E2E]">{{ getUserName(payment.userId) }}</p>
+                                <p class="text-sm text-gray-600">{{ payment.expenseTitle }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold text-[#FF6B6B]">{{ formatMoney(payment.amount) }}</p>
+                            <p class="text-xs text-gray-500">Pendiente</p>
+                        </div>
+                    </div>
+                    
+                    <div v-if="pendingPayments.length > 5" class="text-center pt-2">
+                        <p class="text-sm text-gray-600">
+                            Y {{ pendingPayments.length - 5 }} pagos pendientes más...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Balances por usuario -->
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
@@ -172,6 +218,30 @@ const showAddExpenseModal = ref(false)
 
 // Computed properties
 const expenses = computed(() => expenseStore.getAllExpenses)
+
+const pendingPayments = computed(() => {
+    const currentUser = userStore.currentUser
+    if (!currentUser) return []
+    
+    const pending = []
+    
+    expenseStore.getAllExpenses.forEach(expense => {
+        const userAmount = expense.amount / expense.userIds.length
+        const isUserPaid = expenseStore.getUserPaymentStatus(currentUser.id, expense.id)
+        
+        if (expense.userIds.includes(currentUser.id) && !isUserPaid) {
+            pending.push({
+                id: expense.id,
+                title: expense.title,
+                amount: userAmount,
+                paidBy: userStore.getUserById(expense.paidBy)?.name || 'Usuario desconocido',
+                date: expense.date
+            })
+        }
+    })
+    
+    return pending.sort((a, b) => new Date(b.date) - new Date(a.date))
+})
 const totalExpenses = computed(() => expenseStore.getTotalExpenses)
 const balances = computed(() => expenseStore.getBalances)
 const currentUser = computed(() => userStore.getCurrentUser)
@@ -210,6 +280,19 @@ const onExpenseAdded = async () => {
     
     // Refrescar los datos
     await expenseStore.fetchExpenses()
+}
+
+const markPaymentAsPaid = async (expenseId) => {
+    const currentUser = userStore.currentUser
+    if (!currentUser) return
+    
+    try {
+        await expenseStore.markUserPayment(currentUser.id, expenseId, true)
+        alertStore.success('Pago marcado como pagado')
+        console.log('markPaymentAsPaid')
+    } catch (error) {
+        alertStore.error('Error al marcar el pago')
+    }
 }
 
 // Cargar datos al montar el componente

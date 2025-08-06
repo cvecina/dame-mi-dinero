@@ -117,6 +117,58 @@ export const useExpenseStore = defineStore({
                 this.loading = false
             }
         },
+
+        async markUserPayment(expenseId, userId, isPaid = true) {
+            try {
+                const expense = this.expenses.find(exp => exp.id === expenseId)
+                if (!expense) {
+                    throw new Error('Gasto no encontrado')
+                }
+
+                // Inicializar payments si no existe
+                if (!expense.payments) {
+                    expense.payments = {}
+                }
+
+                // Marcar como pagado/no pagado
+                expense.payments[userId] = isPaid
+
+                // Actualizar el gasto en la base de datos
+                await this.updateExpense(expenseId, expense)
+                
+                console.log('markUserPayment')
+                return expense
+            } catch (error) {
+                console.error('Error al marcar pago:', error)
+                throw error
+            }
+        },
+
+        getUserPaymentStatus(expenseId, userId) {
+            const expense = this.expenses.find(exp => exp.id === expenseId)
+            if (!expense || !expense.payments) {
+                return false
+            }
+            return expense.payments[userId] || false
+        },
+
+        getExpensePaymentSummary(expenseId) {
+            const expense = this.expenses.find(exp => exp.id === expenseId)
+            if (!expense) return { paid: 0, total: 0, users: [] }
+
+            const totalUsers = expense.participants.length
+            const payments = expense.payments || {}
+            const paidUsers = Object.values(payments).filter(paid => paid).length
+
+            return {
+                paid: paidUsers,
+                total: totalUsers,
+                users: expense.participants.map(userId => ({
+                    userId,
+                    paid: payments[userId] || false
+                }))
+            }
+        },
         
         async deleteExpense(id) {
             this.loading = true
