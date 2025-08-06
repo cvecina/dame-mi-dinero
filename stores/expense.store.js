@@ -37,10 +37,34 @@ export const useExpenseStore = defineStore({
             
             // Calcular lo que cada uno ha pagado y debe
             state.expenses.forEach(expense => {
+                // El que pagó inicialmente
                 balances[expense.paidBy].paid += expense.amount;
                 
+                // Lo que cada participante debe según la división
                 expense.splits.forEach(split => {
-                    balances[split.userId].owes += split.amount;
+                    const userId = split.userId;
+                    const amountOwed = split.amount;
+                    
+                    // Si el usuario que debe es el mismo que pagó originalmente,
+                    // ya pagó su parte automáticamente, no debe nada más
+                    if (userId === expense.paidBy) {
+                        // El pagador original ya cubrió su parte al pagar el gasto completo
+                        // No necesita pagar nada adicional
+                        return;
+                    }
+                    
+                    // Para otros participantes: verificar si ya pagaron individualmente
+                    const hasPaid = expense.payments && expense.payments[userId];
+                    
+                    if (!hasPaid) {
+                        // Si no ha pagado individualmente, debe su parte
+                        balances[userId].owes += amountOwed;
+                    } else {
+                        // Si pagó individualmente, se considera que pagó su parte
+                        // y el dinero va al que originalmente pagó
+                        balances[userId].paid += amountOwed;
+                        balances[expense.paidBy].paid -= amountOwed;
+                    }
                 });
             });
             

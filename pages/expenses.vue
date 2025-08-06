@@ -155,6 +155,7 @@
                                         </div>
                                         
                                         <button
+                                            v-if="participant !== expense.paidBy"
                                             @click="togglePaymentStatus(expense.id, participant)"
                                             :class="[
                                                 'px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap',
@@ -165,6 +166,14 @@
                                         >
                                             {{ getUserPaymentStatus(expense.id, participant) ? '✓ Pagado' : 'Marcar como pagado' }}
                                         </button>
+                                        
+                                        <!-- Indicador para quien pagó originalmente -->
+                                        <div
+                                            v-else
+                                            class="px-3 py-1 rounded-full text-xs font-medium bg-azul-tiquet text-blanco-dividido"
+                                        >
+                                            💳 Pagó originalmente
+                                        </div>
                                     </div>
                                 </div>
                             </div>

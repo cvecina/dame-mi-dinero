@@ -248,6 +248,11 @@ const pendingPayments = computed(() => {
             return
         }
         
+        // Si el usuario actual es quien pagó originalmente, ya pagó su parte
+        if (expense.paidBy === currentUser.value.id) {
+            return
+        }
+        
         // Calcular el monto que debe pagar este usuario
         const userAmount = expense.amount / expense.participants.length
         
