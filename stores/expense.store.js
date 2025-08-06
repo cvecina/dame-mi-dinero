@@ -23,7 +23,7 @@ export const useExpenseStore = defineStore({
         getBalances: (state) => {
             const balances = {};
             
-            // Inicializar balances
+            // Inicializar balances para todos los usuarios que participan
             state.expenses.forEach(expense => {
                 expense.participants.forEach(userId => {
                     if (!balances[userId]) {
@@ -35,42 +35,42 @@ export const useExpenseStore = defineStore({
                 }
             });
             
-            // Calcular lo que cada uno ha pagado y debe
+            // Procesar cada gasto
             state.expenses.forEach(expense => {
-                // El que pagó inicialmente
-                balances[expense.paidBy].paid += expense.amount;
+                // 1. El pagador original pone el dinero
+                const amount = parseFloat(expense.amount);
+                balances[expense.paidBy].paid += amount;
                 
-                // Lo que cada participante debe según la división
+                // 2. Calcular lo que cada participante debe según los splits
                 expense.splits.forEach(split => {
-                    const userId = split.userId;
-                    const amountOwed = split.amount;
+                    const userId = parseInt(split.userId);
+                    const amountOwed = parseFloat(split.amount);
                     
-                    // Si el usuario que debe es el mismo que pagó originalmente,
-                    // ya pagó su parte automáticamente, no debe nada más
-                    if (userId === expense.paidBy) {
-                        // El pagador original ya cubrió su parte al pagar el gasto completo
-                        // No necesita pagar nada adicional
-                        return;
-                    }
-                    
-                    // Para otros participantes: verificar si ya pagaron individualmente
-                    const hasPaid = expense.payments && expense.payments[userId];
-                    
-                    if (!hasPaid) {
-                        // Si no ha pagado individualmente, debe su parte
-                        balances[userId].owes += amountOwed;
-                    } else {
-                        // Si pagó individualmente, se considera que pagó su parte
-                        // y el dinero va al que originalmente pagó
-                        balances[userId].paid += amountOwed;
-                        balances[expense.paidBy].paid -= amountOwed;
-                    }
+                    // Todos deben su parte, incluido el pagador original
+                    balances[userId].owes += amountOwed;
                 });
+                
+                // 3. Procesar pagos individuales adicionales
+                if (expense.payments) {
+                    Object.entries(expense.payments).forEach(([userIdStr, hasPaid]) => {
+                        if (hasPaid) {
+                            const userId = parseInt(userIdStr);
+                            const userSplit = expense.splits.find(s => parseInt(s.userId) === userId);
+                            
+                            // Solo agregar pago individual si NO es el pagador original
+                            // (el pagador original ya tiene registrado su pago completo)
+                            if (userSplit && userId !== expense.paidBy) {
+                                const paidAmount = parseFloat(userSplit.amount);
+                                balances[userId].paid += paidAmount;
+                            }
+                        }
+                    });
+                }
             });
             
-            // Calcular balance final
+            // Calcular balance final: lo que pagó menos lo que debe
             Object.keys(balances).forEach(userId => {
-                balances[userId].balance = balances[userId].paid - balances[userId].owes;
+                balances[userId].balance = Math.round((balances[userId].paid - balances[userId].owes) * 100) / 100;
             });
             
             console.log('getBalances');

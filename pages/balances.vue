@@ -38,6 +38,29 @@
         </p>
       </div>
 
+      <!-- DEBUG: Verificación manual de cálculos -->
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <h3 class="text-lg font-semibold text-yellow-800 mb-4">🔍 Verificación de Cálculos</h3>
+        <div class="space-y-2 text-sm">
+          <div v-for="expense in expenses" :key="expense.id" class="bg-white p-3 rounded border">
+            <p class="font-medium">{{ expense.title }} - {{ formatMoney(expense.amount) }}</p>
+            <p class="text-gray-600">Pagado por: {{ getUserName(expense.paidBy) }}</p>
+            <p class="text-gray-600">Participantes: {{ expense.participants.map(id => getUserName(id)).join(', ') }}</p>
+            <div class="mt-2">
+              <p class="text-xs text-gray-500">Splits:</p>
+              <div class="ml-2">
+                <div v-for="split in expense.splits" :key="split.userId" class="text-xs">
+                  {{ getUserName(split.userId) }}: {{ formatMoney(split.amount) }}
+                  <span v-if="expense.payments && expense.payments[split.userId]" class="text-green-600">✓ Pagado</span>
+                  <span v-else-if="split.userId === expense.paidBy" class="text-blue-600">💳 Pagador original</span>
+                  <span v-else class="text-red-600">⏳ Pendiente</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Resumen general mejorado -->
       <div
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8"
