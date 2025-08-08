@@ -10,11 +10,10 @@ export const useContextStore = defineStore({
     getters: {
         getSelectedDineroId: (state) => state.selectedDineroId,
         
-        getSelectedDinero: (state) => {
-            if (!state.selectedDineroId) return null;
-            const { useDineroStore } = require('~/stores/dinero.store');
-            const dineroStore = useDineroStore();
-            return dineroStore.getDineroById(state.selectedDineroId);
+        getSelectedDinero() {
+            if (!this.selectedDineroId) return null;
+            // Usar dynamic import para evitar problemas de circular dependency
+            return null; // Lo manejaremos desde los componentes que lo necesiten
         },
         
         isLoading: (state) => state.loading

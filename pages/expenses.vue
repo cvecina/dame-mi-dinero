@@ -22,8 +22,15 @@
             <!-- Header -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Todos los gastos</h1>
-                    <p class="text-sm sm:text-base text-gray-600">Historial completo de gastos compartidos</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">
+                        Gastos{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
+                    </h1>
+                    <p class="text-sm sm:text-base text-gray-600">
+                        {{ selectedDinero ? 
+                            `Gastos del dinero: ${selectedDinero.name}` : 
+                            'Historial completo de gastos compartidos' 
+                        }}
+                    </p>
                 </div>
                 <button 
                     @click="showAddExpenseModal = true"
@@ -91,6 +98,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
                 <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">
                     {{ filteredExpenses.length }} gasto{{ filteredExpenses.length !== 1 ? 's' : '' }}
+                    {{ selectedDinero ? `en ${selectedDinero.name}` : '' }}
                 </h2>
                 <div class="text-sm text-gray-600">
                     Total: {{ formatMoney(totalFilteredAmount) }}
@@ -99,7 +107,15 @@
 
             <div v-if="filteredExpenses.length === 0" class="text-center py-12 text-gray-500">
                 <div class="text-4xl sm:text-6xl mb-4">💸</div>
-                <p class="text-base sm:text-lg">No hay gastos que coincidan con los filtros</p>
+                <p class="text-base sm:text-lg mb-2">
+                    {{ selectedDinero ? 
+                        `No hay gastos en "${selectedDinero.name}"` : 
+                        'No hay gastos que coincidan con los filtros' 
+                    }}
+                </p>
+                <p v-if="selectedDinero" class="text-sm text-gray-400">
+                    Cambia de dinero en el selector superior o añade un nuevo gasto
+                </p>
             </div>
 
             <div v-else class="space-y-3 sm:space-y-4">
@@ -205,15 +221,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useExpenseStore } from '~/stores/expense.store'
 import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
+import { useContextStore } from '~/stores/context.store'
+import { useDineroStore } from '~/stores/dinero.store'
 
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
+const contextStore = useContextStore()
+const dineroStore = useDineroStore()
 
 // Reactive data
 const showAddExpenseModal = ref(false)
@@ -224,10 +244,24 @@ const filters = ref({
 })
 
 // Computed properties
-const expenses = computed(() => expenseStore.getAllExpenses)
+const expenses = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    console.log('Getting expenses for dinero:', selectedDineroId)
+    
+    if (!selectedDineroId) {
+        return expenseStore.getAllExpenses
+    }
+    
+    // Filtrar gastos por dinero seleccionado
+    return expenseStore.getExpensesByDinero(selectedDineroId)
+})
 const users = computed(() => userStore.getAllUsers)
 const currentUser = computed(() => userStore.getCurrentUser)
-const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading)
+const selectedDinero = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    return selectedDineroId ? dineroStore.getDineroById(selectedDineroId) : null
+})
+const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading || contextStore.isLoading)
 
 const filteredExpenses = computed(() => {
     let filtered = [...expenses.value]
@@ -337,12 +371,28 @@ const onExpenseAdded = async () => {
     await expenseStore.fetchExpenses()
 }
 
+// Watcher para refrescar cuando cambie el dinero seleccionado
+watch(() => contextStore.getSelectedDineroId, async (newDineroId, oldDineroId) => {
+    if (newDineroId !== oldDineroId) {
+        console.log('Dinero changed in expenses page:', { oldDineroId, newDineroId })
+        // Los datos se actualizarán automáticamente a través del computed
+    }
+}, { immediate: true })
+
 // Cargar datos al montar el componente
 onMounted(async () => {
+    console.log('Expenses page: Loading data...')
+    
     try {
+        // Cargar dineros primero para inicializar el contexto
+        await dineroStore.initializeDineros()
+        await contextStore.initializeSelectedDinero()
+        
         // Asegurar que tenemos usuarios y gastos actualizados
         await userStore.fetchUsers()
         await expenseStore.fetchExpenses()
+        
+        console.log('Expenses page: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)
     } catch (error) {
         console.error('Error al cargar datos:', error)
         alertStore.error('Error al cargar los datos')
