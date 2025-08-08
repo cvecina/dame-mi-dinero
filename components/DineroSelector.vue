@@ -25,7 +25,7 @@
                     :disabled="isLoading"
                     :style="selectedDinero ? { borderLeftColor: selectedDinero.color, borderLeftWidth: '4px' } : {}"
                 >
-                    <option v-for="dinero in dineros" :key="dinero.id" :value="dinero.id">
+                    <option v-for="dinero in dineros" :key="dinero.id" :value="String(dinero.id)">
                         {{ dinero.name }}{{ dinero.isDefault ? ' 🏠' : '' }}
                     </option>
                 </select>
@@ -75,19 +75,42 @@ const isHovered = ref(false)
 
 // Computed properties
 const dineros = computed(() => dineroStore.getAllDineros)
-const selectedDinero = computed(() => 
-    selectedDineroId.value ? dineroStore.getDineroById(selectedDineroId.value) : null
-)
+const selectedDinero = computed(() => {
+    console.log('Computing selectedDinero for ID:', selectedDineroId.value)
+    const dinero = selectedDineroId.value ? dineroStore.getDineroById(selectedDineroId.value) : null
+    console.log('Computed selectedDinero:', dinero)
+    return dinero
+})
 const isLoading = computed(() => dineroStore.isLoading || contextStore.isLoading)
 
 // Methods
 const onDineroChange = () => {
-    contextStore.setSelectedDinero(selectedDineroId.value)
+    console.log('onDineroChange triggered')
+    console.log('selectedDineroId.value:', selectedDineroId.value)
+    console.log('typeof selectedDineroId.value:', typeof selectedDineroId.value)
+    
+    if (!selectedDineroId.value) {
+        console.warn('No dinero ID selected')
+        return
+    }
+    
+    // Convertir a número si es string
+    const dineroId = typeof selectedDineroId.value === 'string' ? parseInt(selectedDineroId.value) : selectedDineroId.value
+    console.log('Converted dinero ID:', dineroId, typeof dineroId)
+    
+    // Actualizar el store de contexto
+    contextStore.setSelectedDinero(dineroId)
+    console.log('Context store updated')
     
     // Mostrar notificación mejorada
-    const dinero = dineroStore.getDineroById(selectedDineroId.value)
+    const dinero = dineroStore.getDineroById(dineroId)
+    console.log('Found dinero:', dinero)
+    
     if (dinero) {
         alertStore.showAlert('success', `Cambiado a: ${dinero.name}`)
+    } else {
+        console.error('Dinero not found for ID:', dineroId)
+        console.log('Available dineros:', dineros.value)
     }
 }
 
@@ -96,23 +119,45 @@ const onHover = (state) => {
 }
 
 // Watchers
-watch(() => contextStore.getSelectedDineroId, (newDineroId) => {
-    selectedDineroId.value = newDineroId
+watch(() => contextStore.getSelectedDineroId, (newDineroId, oldDineroId) => {
+    console.log('Context store dinero changed:', { oldDineroId, newDineroId })
+    // Convertir a string para que coincida con las opciones del select
+    selectedDineroId.value = newDineroId ? String(newDineroId) : null
+}, { immediate: true })
+
+// También watch del selectedDineroId local
+watch(selectedDineroId, (newValue, oldValue) => {
+    console.log('Local selectedDineroId changed:', { oldValue, newValue })
 }, { immediate: true })
 
 // Initialize
 onMounted(async () => {
+    console.log('DineroSelector mounted, initializing...')
+    
     try {
         // Cargar dineros si no están cargados
         if (dineros.value.length === 0) {
+            console.log('Loading dineros...')
             await dineroStore.initializeDineros()
+            console.log('Dineros loaded:', dineros.value.length)
         }
         
         // Inicializar dinero seleccionado
+        console.log('Initializing selected dinero...')
         await contextStore.initializeSelectedDinero()
         
         // Sincronizar el valor local
-        selectedDineroId.value = contextStore.getSelectedDineroId
+        const contextDineroId = contextStore.getSelectedDineroId
+        console.log('Context selected dinero ID:', contextDineroId)
+        selectedDineroId.value = contextDineroId ? String(contextDineroId) : null
+        
+        // Verificar que el dinero existe
+        if (contextDineroId) {
+            const selectedDinero = dineroStore.getDineroById(contextDineroId)
+            console.log('Selected dinero found:', selectedDinero)
+        }
+        
+        console.log('DineroSelector initialization complete')
     } catch (error) {
         console.error('Error al inicializar selector de dinero:', error)
     }
