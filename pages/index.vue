@@ -21,8 +21,15 @@
         <div v-else>
             <!-- Header -->
             <div class="mb-6 sm:mb-8">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Dame mi dinero</h1>
-                <p class="text-sm sm:text-base text-gray-600">Controla tus gastos compartidos con amigos</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">
+                    Dame mi dinero{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
+                </h1>
+                <p class="text-sm sm:text-base text-gray-600">
+                    {{ selectedDinero ? 
+                        `Dashboard del dinero: ${selectedDinero.name}` : 
+                        'Controla tus gastos compartidos con amigos' 
+                    }}
+                </p>
             </div>
 
             <!-- Resumen de balances -->
@@ -63,12 +70,17 @@
                 
                 <div v-if="expenses.length === 0" class="text-center py-8 text-gray-500">
                     <div class="text-4xl mb-2">💸</div>
-                    <p class="text-sm sm:text-base">No hay gastos registrados</p>
+                    <p class="text-sm sm:text-base mb-2">
+                        {{ selectedDinero ? 
+                            `No hay gastos en "${selectedDinero.name}"` : 
+                            'No hay gastos registrados' 
+                        }}
+                    </p>
                     <button 
                         @click="showAddExpenseModal = true"
                         class="mt-3 text-azul-tiquet hover:text-azul-claro-viaje font-medium text-sm sm:text-base"
                     >
-                        Crear tu primer gasto
+                        {{ selectedDinero ? 'Añadir el primer gasto' : 'Crear tu primer gasto' }}
                     </button>
                 </div>
                 
@@ -268,15 +280,25 @@ import { useExpenseStore } from '~/stores/expense.store'
 import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
+import { useDineroStore } from '~/stores/dinero.store'
 
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
 const contextStore = useContextStore()
+const dineroStore = useDineroStore()
 
 // Reactive data
 const showAddExpenseModal = ref(false)
+
+// Computed properties
+const currentUser = computed(() => userStore.getCurrentUser)
+const selectedDinero = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    return selectedDineroId ? dineroStore.getDineroById(selectedDineroId) : null
+})
+const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading || contextStore.isLoading || dineroStore.isLoading)
 
 // Computed properties
 const expenses = computed(() => {
@@ -348,8 +370,6 @@ const balances = computed(() => {
     
     return expenseStore.getBalancesByDinero(selectedDineroId)
 })
-const currentUser = computed(() => userStore.getCurrentUser)
-const isLoading = computed(() => userStore.isLoading || expenseStore.isLoading)
 
 const userBalance = computed(() => {
     if (!currentUser.value) return 0
@@ -391,27 +411,32 @@ const markPaymentAsPaid = async (expenseId) => {
     
     try {
         await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
-        alertStore.showAlert('success', 'Pago marcado como pagado')
+        alertStore.success('Pago marcado como pagado')
         console.log('markPaymentAsPaid')
     } catch (error) {
-        alertStore.showAlert('error', 'Error al marcar el pago')
+        alertStore.error('Error al marcar el pago')
     }
 }
 
 // Cargar datos al montar el componente
 onMounted(async () => {
+    console.log('Dashboard: Loading data...')
+    
     try {
+        // Cargar dineros primero para inicializar el contexto
+        await dineroStore.initializeDineros()
+        await contextStore.initializeSelectedDinero()
+        
         // Si no hay usuarios, esperar a que se inicialicen
         if (userStore.users.length === 0) {
             await userStore.initializeUsers()
         }
         
-        // Inicializar el contexto (dinero seleccionado)
-        await contextStore.initializeSelectedDinero()
-        
         if (expenseStore.expenses.length === 0) {
             await expenseStore.initializeExpenses()
         }
+        
+        console.log('Dashboard: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)
     } catch (error) {
         console.error('Error al cargar datos:', error)
         alertStore.error('Error al cargar los datos')
@@ -424,6 +449,14 @@ watch(() => userStore.users.length, async (newLength) => {
         await expenseStore.initializeExpenses()
     }
 })
+
+// Watcher para refrescar cuando cambie el dinero seleccionado
+watch(() => contextStore.getSelectedDineroId, async (newDineroId, oldDineroId) => {
+    if (newDineroId !== oldDineroId) {
+        console.log('Dinero changed in dashboard:', { oldDineroId, newDineroId })
+        // Los datos se actualizarán automáticamente a través de los computed
+    }
+}, { immediate: true })
 
 console.log('dashboard')
 </script>
