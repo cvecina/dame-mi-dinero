@@ -303,9 +303,27 @@ const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading |
 // Computed properties
 const expenses = computed(() => {
     const selectedDineroId = contextStore.getSelectedDineroId
-    if (!selectedDineroId) return []
+    console.log('Computing expenses for dinero:', selectedDineroId)
     
-    return expenseStore.getExpensesByDinero(selectedDineroId)
+    if (!selectedDineroId) {
+        console.log('No dinero selected, returning empty array')
+        return []
+    }
+    
+    const allExpenses = expenseStore.getAllExpenses
+    console.log('All expenses in store:', allExpenses.length)
+    console.log('Sample expense:', allExpenses[0])
+    
+    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+    console.log('Found expenses for dinero', selectedDineroId, ':', expensesByDinero?.length)
+    
+    // Ordenar por fecha más reciente primero
+    const sortedExpenses = expensesByDinero
+        ? [...expensesByDinero].sort((a, b) => new Date(b.date) - new Date(a.date))
+        : []
+    
+    console.log('Sorted expenses:', sortedExpenses.length)
+    return sortedExpenses
 })
 
 const pendingPayments = computed(() => {
@@ -423,20 +441,28 @@ onMounted(async () => {
     console.log('Dashboard: Loading data...')
     
     try {
-        // Cargar dineros primero para inicializar el contexto
+        // 1. Cargar dineros primero
+        console.log('1. Loading dineros...')
         await dineroStore.initializeDineros()
+        
+        // 2. Inicializar contexto con dinero seleccionado
+        console.log('2. Initializing context...')
         await contextStore.initializeSelectedDinero()
         
-        // Si no hay usuarios, esperar a que se inicialicen
+        // 3. Cargar usuarios
+        console.log('3. Loading users...')
         if (userStore.users.length === 0) {
             await userStore.initializeUsers()
         }
         
+        // 4. Cargar y migrar gastos
+        console.log('4. Loading and migrating expenses...')
         if (expenseStore.expenses.length === 0) {
             await expenseStore.initializeExpenses()
         }
         
         console.log('Dashboard: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)
+        console.log('Total expenses in store:', expenseStore.getAllExpenses.length)
     } catch (error) {
         console.error('Error al cargar datos:', error)
         alertStore.error('Error al cargar los datos')

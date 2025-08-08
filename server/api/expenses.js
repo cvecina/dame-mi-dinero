@@ -14,12 +14,12 @@ export default defineEventHandler(async (event) => {
         if (method === 'POST') {
             // Crear nuevo gasto
             const body = await readBody(event)
-            const { title, amount, category, description, paidBy, participants } = body
+            const { title, amount, category, description, dineroId, paidBy, participants } = body
             
-            if (!title || !amount || !category || !paidBy || !participants?.length) {
+            if (!title || !amount || !category || !paidBy || !participants?.length || !dineroId) {
                 throw createError({
                     statusCode: 400,
-                    statusMessage: 'Datos incompletos del gasto'
+                    statusMessage: 'Datos incompletos del gasto (incluyendo dineroId)'
                 })
             }
             
@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
                 amount: parseFloat(amount),
                 category,
                 description: description?.trim() || '',
+                dineroId: parseInt(dineroId), // Agregar dineroId
                 paidBy: parseInt(paidBy),
                 participants: participants.map(id => parseInt(id)),
                 splits,
