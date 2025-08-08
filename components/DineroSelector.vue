@@ -76,18 +76,14 @@ const isHovered = ref(false)
 // Computed properties
 const dineros = computed(() => dineroStore.getAllDineros)
 const selectedDinero = computed(() => {
-    console.log('Computing selectedDinero for ID:', selectedDineroId.value)
-    const dinero = selectedDineroId.value ? dineroStore.getDineroById(selectedDineroId.value) : null
-    console.log('Computed selectedDinero:', dinero)
+    const dinero = selectedDineroId.value ? dineroStore.getDineroById(parseInt(selectedDineroId.value)) : null
     return dinero
 })
 const isLoading = computed(() => dineroStore.isLoading || contextStore.isLoading)
 
 // Methods
 const onDineroChange = () => {
-    console.log('onDineroChange triggered')
-    console.log('selectedDineroId.value:', selectedDineroId.value)
-    console.log('typeof selectedDineroId.value:', typeof selectedDineroId.value)
+    console.log('onDineroChange - selectedDineroId:', selectedDineroId.value)
     
     if (!selectedDineroId.value) {
         console.warn('No dinero ID selected')
@@ -96,21 +92,21 @@ const onDineroChange = () => {
     
     // Convertir a número si es string
     const dineroId = typeof selectedDineroId.value === 'string' ? parseInt(selectedDineroId.value) : selectedDineroId.value
-    console.log('Converted dinero ID:', dineroId, typeof dineroId)
+    console.log('Converting to dinero ID:', dineroId)
     
     // Actualizar el store de contexto
     contextStore.setSelectedDinero(dineroId)
-    console.log('Context store updated')
     
     // Mostrar notificación mejorada
     const dinero = dineroStore.getDineroById(dineroId)
     console.log('Found dinero:', dinero)
     
     if (dinero) {
-        alertStore.showAlert('success', `Cambiado a: ${dinero.name}`)
+        alertStore.success(`Cambiado a: ${dinero.name}`)
     } else {
         console.error('Dinero not found for ID:', dineroId)
         console.log('Available dineros:', dineros.value)
+        alertStore.error('Error al cambiar dinero')
     }
 }
 
@@ -120,46 +116,32 @@ const onHover = (state) => {
 
 // Watchers
 watch(() => contextStore.getSelectedDineroId, (newDineroId, oldDineroId) => {
-    console.log('Context store dinero changed:', { oldDineroId, newDineroId })
+    console.log('Context dinero changed from', oldDineroId, 'to', newDineroId)
     // Convertir a string para que coincida con las opciones del select
     selectedDineroId.value = newDineroId ? String(newDineroId) : null
 }, { immediate: true })
 
-// También watch del selectedDineroId local
-watch(selectedDineroId, (newValue, oldValue) => {
-    console.log('Local selectedDineroId changed:', { oldValue, newValue })
-}, { immediate: true })
-
 // Initialize
 onMounted(async () => {
-    console.log('DineroSelector mounted, initializing...')
+    console.log('DineroSelector: Initializing...')
     
     try {
         // Cargar dineros si no están cargados
         if (dineros.value.length === 0) {
-            console.log('Loading dineros...')
             await dineroStore.initializeDineros()
-            console.log('Dineros loaded:', dineros.value.length)
         }
         
         // Inicializar dinero seleccionado
-        console.log('Initializing selected dinero...')
         await contextStore.initializeSelectedDinero()
         
         // Sincronizar el valor local
         const contextDineroId = contextStore.getSelectedDineroId
-        console.log('Context selected dinero ID:', contextDineroId)
         selectedDineroId.value = contextDineroId ? String(contextDineroId) : null
         
-        // Verificar que el dinero existe
-        if (contextDineroId) {
-            const selectedDinero = dineroStore.getDineroById(contextDineroId)
-            console.log('Selected dinero found:', selectedDinero)
-        }
-        
-        console.log('DineroSelector initialization complete')
+        console.log('DineroSelector: Initialization complete. Selected:', contextDineroId)
     } catch (error) {
         console.error('Error al inicializar selector de dinero:', error)
+        alertStore.error('Error al cargar dineros')
     }
 })
 
