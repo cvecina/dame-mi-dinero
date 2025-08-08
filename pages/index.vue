@@ -153,10 +153,9 @@
             </div>
 
             <!-- Balances por usuario -->
-                        <!-- Balances por usuario -->
             <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
-                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Balances</h2>
+                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Balances detallados</h2>
                     <NuxtLink 
                         to="/balances"
                         class="text-azul-tiquet hover:text-azul-claro-viaje text-sm font-medium transition-colors"
@@ -171,29 +170,83 @@
                 </div>
 
                 <div v-else class="space-y-3 sm:space-y-4">
+                    <!-- Tu usuario destacado primero -->
+                    <div 
+                        v-if="currentUser && balances[currentUser.id]"
+                        class="relative overflow-hidden flex flex-col p-4 sm:p-5 bg-gradient-to-r from-lima-compartida/20 to-azul-claro-viaje/20 rounded-lg border-2 border-lima-compartida/50 shadow-lg"
+                    >
+                        <!-- Indicador visual de "tu usuario" -->
+                        <div class="absolute top-2 right-2 bg-lima-compartida px-2 py-1 rounded-full">
+                            <span class="text-xs font-semibold text-gris-billetera">TÚ</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-bold text-lg">
+                                {{ getUserName(currentUser.id).charAt(0).toUpperCase() }}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gris-billetera text-lg">{{ getUserName(currentUser.id) }}</h3>
+                                <p class="text-sm text-gray-600">Tu resumen financiero</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="text-center">
+                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Has gastado</p>
+                                <p class="font-bold text-azul-tiquet text-sm sm:text-base">{{ formatMoney(balances[currentUser.id].totalSpent) }}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Debes</p>
+                                <p class="font-bold text-red-500 text-sm sm:text-base">{{ formatMoney(balances[currentUser.id].owes) }}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Te deben</p>
+                                <p class="font-bold text-lima-compartida text-sm sm:text-base">{{ formatMoney(balances[currentUser.id].owedToThem) }}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs sm:text-sm text-gray-600 mb-1">Balance</p>
+                                <p class="font-bold text-lg" :class="balances[currentUser.id].balance >= 0 ? 'text-azul-tiquet' : 'text-red-500'">
+                                    {{ formatMoney(balances[currentUser.id].balance) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Otros usuarios -->
                     <div 
                         v-for="(balance, userId) in balances" 
                         :key="userId"
-                        class="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-marfil-mapamundi rounded-lg gap-3 sm:gap-0"
+                        v-show="!currentUser || parseInt(userId) !== currentUser.id"
+                        class="flex flex-col p-4 bg-marfil-mapamundi rounded-lg hover:bg-azul-claro-viaje/10 transition-colors duration-200"
                     >
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 mb-3">
                             <div class="w-8 h-8 sm:w-10 sm:h-10 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-semibold text-sm sm:text-base">
                                 {{ getUserName(parseInt(userId)).charAt(0).toUpperCase() }}
                             </div>
                             <div>
-                                <span class="font-medium text-gris-billetera text-sm sm:text-base">{{ getUserName(parseInt(userId)) }}</span>
-                                <span v-if="parseInt(userId) === currentUser?.id" class="ml-2 text-xs px-2 py-1 bg-lima-compartida/20 text-gris-billetera rounded-full">
-                                    Tú
-                                </span>
+                                <h4 class="font-semibold text-gris-billetera text-sm sm:text-base">{{ getUserName(parseInt(userId)) }}</h4>
                             </div>
                         </div>
-                        <div class="text-left sm:text-right">
-                            <p class="font-semibold text-sm sm:text-base" :class="balance.balance >= 0 ? 'text-azul-tiquet' : 'text-red-500'">
-                                {{ formatMoney(balance.balance) }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                Pagó {{ formatMoney(balance.paid) }} • Debe {{ formatMoney(balance.owes) }}
-                            </p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                            <div>
+                                <p class="text-xs text-gray-600">Ha gastado</p>
+                                <p class="font-semibold text-azul-tiquet">{{ formatMoney(balance.totalSpent) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">Debe</p>
+                                <p class="font-semibold text-red-500">{{ formatMoney(balance.owes) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">Le deben</p>
+                                <p class="font-semibold text-lima-compartida">{{ formatMoney(balance.owedToThem) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">Balance</p>
+                                <p class="font-bold" :class="balance.balance >= 0 ? 'text-azul-tiquet' : 'text-red-500'">
+                                    {{ formatMoney(balance.balance) }}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

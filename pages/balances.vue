@@ -169,8 +169,9 @@
                   >
                 </h3>
                 <div class="flex items-center gap-4 text-sm text-gray-600">
-                  <span>Pagó: {{ formatMoney(balance.paid) }}</span>
+                  <span>Gastó: {{ formatMoney(balance.totalSpent) }}</span>
                   <span>Debe: {{ formatMoney(balance.owes) }}</span>
+                  <span>Le deben: {{ formatMoney(balance.owedToThem) }}</span>
                   <span
                     >Gastos: {{ getUserExpenseCount(parseInt(userId)) }}</span
                   >
