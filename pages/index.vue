@@ -267,30 +267,38 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useExpenseStore } from '~/stores/expense.store'
 import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
+import { useContextStore } from '~/stores/context.store'
 
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
+const contextStore = useContextStore()
 
 // Reactive data
 const showAddExpenseModal = ref(false)
 
 // Computed properties
 const expenses = computed(() => {
-    const allExpenses = expenseStore.getAllExpenses
-    return Array.isArray(allExpenses) ? allExpenses : []
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return []
+    
+    return expenseStore.getExpensesByDinero(selectedDineroId)
 })
 
 const pendingPayments = computed(() => {
     if (!currentUser.value) return []
     
-    const allExpenses = expenseStore.getAllExpenses
-    if (!allExpenses || !Array.isArray(allExpenses)) return []
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return []
+    
+    // Filtrar gastos del dinero seleccionado
+    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+    if (!expensesByDinero || !Array.isArray(expensesByDinero)) return []
     
     const pending = []
     
-    allExpenses.forEach(expense => {
+    expensesByDinero.forEach(expense => {
         // Validar que el expense tenga las propiedades necesarias
         if (!expense || !expense.participants || !Array.isArray(expense.participants) || !expense.amount || !expense.id) {
             return
@@ -326,8 +334,20 @@ const pendingPayments = computed(() => {
     
     return pending.sort((a, b) => new Date(b.date) - new Date(a.date))
 })
-const totalExpenses = computed(() => expenseStore.getTotalExpenses)
-const balances = computed(() => expenseStore.getBalances)
+
+const totalExpenses = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return 0
+    
+    return expenseStore.getTotalExpensesByDinero(selectedDineroId)
+})
+
+const balances = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return {}
+    
+    return expenseStore.getBalancesByDinero(selectedDineroId)
+})
 const currentUser = computed(() => userStore.getCurrentUser)
 const isLoading = computed(() => userStore.isLoading || expenseStore.isLoading)
 
@@ -385,6 +405,10 @@ onMounted(async () => {
         if (userStore.users.length === 0) {
             await userStore.initializeUsers()
         }
+        
+        // Inicializar el contexto (dinero seleccionado)
+        await contextStore.initializeSelectedDinero()
+        
         if (expenseStore.expenses.length === 0) {
             await expenseStore.initializeExpenses()
         }

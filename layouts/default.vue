@@ -31,6 +31,15 @@
               Dashboard
             </NuxtLink>
             <NuxtLink
+              to="/dineros"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
+              :class="{
+                'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/dineros',
+              }"
+            >
+              Dineros
+            </NuxtLink>
+            <NuxtLink
               to="/expenses"
               class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
               :class="{
@@ -59,8 +68,11 @@
             </NuxtLink>
           </div>
 
-          <!-- Usuario actual y menú móvil -->
+          <!-- Selectors y menú móvil -->
           <div class="flex items-center gap-2 sm:gap-4">
+            <!-- Selector de dinero -->
+            <DineroSelector />
+            
             <!-- Selector de usuario -->
             <UserSelector />
 
@@ -99,6 +111,16 @@
               :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/' }"
             >
               Dashboard
+            </NuxtLink>
+            <NuxtLink
+              to="/dineros"
+              @click="showMobileMenu = false"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
+              :class="{
+                'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/dineros',
+              }"
+            >
+              Dineros
             </NuxtLink>
             <NuxtLink
               to="/expenses"

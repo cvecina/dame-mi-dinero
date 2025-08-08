@@ -3,7 +3,16 @@
         <div class="bg-blanco-dividido rounded-lg shadow-xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
             <!-- Header -->
             <div class="flex items-center justify-between p-4 sm:p-6 border-b">
-                <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Añadir nuevo gasto</h2>
+                <div>
+                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Añadir nuevo gasto</h2>
+                    <div v-if="selectedDinero" class="flex items-center gap-2 mt-1">
+                        <div 
+                            class="w-3 h-3 rounded-full" 
+                            :style="{ backgroundColor: selectedDinero.color }"
+                        ></div>
+                        <span class="text-xs text-gray-600">Se añadirá a: {{ selectedDinero.name }}</span>
+                    </div>
+                </div>
                 <button 
                     @click="$emit('close')"
                     class="text-gray-400 hover:text-gray-600 transition-colors p-1"
@@ -161,9 +170,10 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useExpenseStore } from '~/stores/expense.store'
 import { useUserStore } from '~/stores/user.store'
+import { useContextStore } from '~/stores/context.store'
 
 // Emits
 const emit = defineEmits(['close', 'expense-added'])
@@ -171,6 +181,7 @@ const emit = defineEmits(['close', 'expense-added'])
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
+const contextStore = useContextStore()
 
 // Form data
 const formData = ref({
@@ -178,19 +189,21 @@ const formData = ref({
     amount: 0,
     category: '',
     description: '',
-    paidBy: userStore.getCurrentUser.id,
-    participants: [userStore.getCurrentUser.id]
+    paidBy: userStore.getCurrentUser?.id || '',
+    participants: userStore.getCurrentUser ? [userStore.getCurrentUser.id] : []
 })
 
 // Computed
 const users = computed(() => userStore.getAllUsers)
+const selectedDinero = computed(() => contextStore.getSelectedDinero)
 
 const isFormValid = computed(() => {
     return formData.value.title.trim() !== '' &&
            formData.value.amount > 0 &&
            formData.value.category !== '' &&
            formData.value.paidBy !== '' &&
-           formData.value.participants.length > 0
+           formData.value.participants.length > 0 &&
+           contextStore.getSelectedDineroId
 })
 
 // Methods
@@ -215,6 +228,7 @@ const submitExpense = async () => {
             amount: formData.value.amount,
             category: formData.value.category,
             description: formData.value.description,
+            dineroId: contextStore.getSelectedDineroId, // Usar el dinero seleccionado globalmente
             paidBy: formData.value.paidBy,
             participants: formData.value.participants
         }
