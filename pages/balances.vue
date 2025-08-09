@@ -1,497 +1,582 @@
 <template>
-  <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
-    <!-- Loading state -->
-    <div v-if="isLoading" class="flex items-center justify-center py-20">
-      <div class="text-center">
-        <div
-          class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"
-        ></div>
-        <p class="text-gris-billetera font-medium">Cargando balances...</p>
-      </div>
+    <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
+        <!-- Loading state -->
+        <div v-if="isLoading" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gris-billetera font-medium">Cargando balances...</p>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando no hay usuario seleccionado -->
+        <div v-else-if="!currentUser" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <div class="text-6xl mb-4">👋</div>
+                <h2 class="text-xl font-semibold text-gris-billetera mb-2">¡Hola!</h2>
+                <p class="text-gray-600">Selecciona tu usuario para ver los balances</p>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div v-else>
+            <!-- Header -->
+            <div class="mb-6 sm:mb-8">
+                <div class="flex items-center gap-3 mb-4">
+                    <NuxtLink 
+                        to="/"
+                        class="flex items-center justify-center w-10 h-10 bg-azul-tiquet text-blanco-dividido rounded-lg hover:bg-azul-claro-viaje transition-colors"
+                    >
+                        ←
+                    </NuxtLink>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera">
+                            Balances{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
+                        </h1>
+                        <p class="text-sm sm:text-base text-gray-600">
+                            {{ selectedDinero ? 
+                                `Gestión de balances para: ${selectedDinero.name}` : 
+                                'Gestión completa de deudas y pagos' 
+                            }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sin balances -->
+            <div v-if="Object.keys(balances).length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">💰</div>
+                <h2 class="text-xl font-semibold text-gris-billetera mb-2">No hay balances</h2>
+                <p class="text-gray-600 mb-6">Aún no hay gastos registrados para calcular balances</p>
+                <NuxtLink 
+                    to="/"
+                    class="bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors"
+                >
+                    Añadir primer gasto
+                </NuxtLink>
+            </div>
+
+            <!-- Contenido principal -->
+            <div v-else class="space-y-6 sm:space-y-8">
+                <!-- Resumen personal destacado -->
+                <div 
+                    v-if="balances[currentUser.id]"
+                    class="relative overflow-hidden bg-gradient-to-br from-azul-tiquet/10 to-lima-compartida/10 rounded-xl border-2 border-azul-tiquet/20 p-6 sm:p-8"
+                >
+                    <div class="absolute top-4 right-4 bg-azul-tiquet text-blanco-dividido px-3 py-1 rounded-full text-xs font-bold">
+                        TU RESUMEN
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-bold text-xl">
+                                {{ getUserName(currentUser.id).charAt(0).toUpperCase() }}
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-gris-billetera">{{ getUserName(currentUser.id) }}</h2>
+                                <p class="text-lg font-semibold" :class="balances[currentUser.id].balance >= 0 ? 'text-azul-tiquet' : 'text-red-600'">
+                                    Balance: {{ formatMoney(balances[currentUser.id].balance) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-2">Total pagado</p>
+                            <p class="text-xl font-bold text-azul-tiquet">{{ formatMoney(balances[currentUser.id].totalSpent) }}</p>
+                        </div>
+                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-2">Te deben</p>
+                            <p class="text-xl font-bold text-lima-compartida">{{ formatMoney(balances[currentUser.id].owedToThem) }}</p>
+                        </div>
+                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                            <p class="text-sm text-gray-600 mb-2">Debes</p>
+                            <p class="text-xl font-bold text-red-500">{{ formatMoney(balances[currentUser.id].owes) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dinero que te deben -->
+                <div v-if="peopleWhoOweMe.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-lima-compartida rounded-full flex items-center justify-center">
+                            <span class="text-xl">💰</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gris-billetera">Dinero que te deben</h2>
+                            <p class="text-sm text-gray-600">{{ peopleWhoOweMe.length }} persona{{ peopleWhoOweMe.length !== 1 ? 's' : '' }} te debe{{ peopleWhoOweMe.length === 1 ? '' : 'n' }} dinero</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div 
+                            v-for="debt in peopleWhoOweMe" 
+                            :key="`owed-${debt.userId}`"
+                            class="border border-lima-compartida/20 bg-lima-compartida/5 rounded-lg p-4 hover:bg-lima-compartida/10 transition-colors"
+                        >
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-bold">
+                                        {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gris-billetera">{{ getUserName(debt.userId) }}</h3>
+                                        <p class="text-sm text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-lima-compartida">{{ formatMoney(debt.amount) }}</p>
+                                    <button 
+                                        @click="sendReminder(debt.userId, debt.amount)"
+                                        class="mt-1 px-3 py-1 bg-azul-tiquet text-blanco-dividido text-xs rounded-full hover:bg-azul-claro-viaje transition-colors"
+                                    >
+                                        Recordar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Detalles de gastos -->
+                            <div v-if="debt.expenses && debt.expenses.length > 0" class="border-t border-lima-compartida/20 pt-3">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Gastos pendientes:</h4>
+                                <div class="space-y-2">
+                                    <div 
+                                        v-for="expense in debt.expenses.slice(0, 3)" 
+                                        :key="`debt-expense-${expense.id}`"
+                                        class="flex justify-between items-center text-sm"
+                                    >
+                                        <span class="text-gray-600">{{ expense.title }}</span>
+                                        <span class="font-medium text-gris-billetera">{{ formatMoney(expense.amount / expense.participants.length) }}</span>
+                                    </div>
+                                    <div v-if="debt.expenses.length > 3" class="text-xs text-gray-500 text-center pt-1">
+                                        Y {{ debt.expenses.length - 3 }} gastos más...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dinero que debes -->
+                <div v-if="peopleIOwe.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+                            <span class="text-xl text-blanco-dividido">💸</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gris-billetera">Dinero que debes</h2>
+                            <p class="text-sm text-gray-600">Debes dinero a {{ peopleIOwe.length }} persona{{ peopleIOwe.length !== 1 ? 's' : '' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div 
+                            v-for="debt in peopleIOwe" 
+                            :key="`owe-${debt.userId}`"
+                            class="border border-red-200 bg-red-50 rounded-lg p-4 hover:bg-red-100 transition-colors"
+                        >
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-bold">
+                                        {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gris-billetera">{{ getUserName(debt.userId) }}</h3>
+                                        <p class="text-sm text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-red-600">{{ formatMoney(debt.amount) }}</p>
+                                    <button 
+                                        @click="payDebt(debt.userId, debt.amount)"
+                                        class="mt-1 px-4 py-1 bg-lima-compartida text-gris-billetera text-xs rounded-full hover:bg-azul-claro-viaje transition-colors font-medium"
+                                    >
+                                        Pagar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Detalles de gastos -->
+                            <div v-if="debt.expenses && debt.expenses.length > 0" class="border-t border-red-200 pt-3">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Gastos pendientes:</h4>
+                                <div class="space-y-2">
+                                    <div 
+                                        v-for="expense in debt.expenses.slice(0, 3)" 
+                                        :key="`owe-expense-${expense.id}`"
+                                        class="flex justify-between items-center text-sm"
+                                    >
+                                        <span class="text-gray-600">{{ expense.title }}</span>
+                                        <span class="font-medium text-gris-billetera">{{ formatMoney(expense.amount / expense.participants.length) }}</span>
+                                    </div>
+                                    <div v-if="debt.expenses.length > 3" class="text-xs text-gray-500 text-center pt-1">
+                                        Y {{ debt.expenses.length - 3 }} gastos más...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Otros usuarios -->
+                <div v-if="otherUsers.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-azul-claro-viaje rounded-full flex items-center justify-center">
+                            <span class="text-xl">👥</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gris-billetera">Otros participantes</h2>
+                            <p class="text-sm text-gray-600">Usuarios sin deudas pendientes contigo</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div 
+                            v-for="user in otherUsers" 
+                            :key="`other-${user.userId}`"
+                            class="border border-gray-200 bg-gray-50 rounded-lg p-4"
+                        >
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-blanco-dividido font-bold">
+                                    {{ getUserName(user.userId).charAt(0).toUpperCase() }}
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gris-billetera">{{ getUserName(user.userId) }}</h3>
+                                    <p class="text-sm" :class="user.balance >= 0 ? 'text-azul-tiquet' : 'text-red-600'">
+                                        {{ formatMoney(user.balance) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado equilibrado -->
+                <div v-if="peopleWhoOweMe.length === 0 && peopleIOwe.length === 0 && balances[currentUser.id]" class="bg-blanco-dividido rounded-lg shadow-md p-6 sm:p-8 text-center">
+                    <div class="text-6xl mb-4">✅</div>
+                    <h2 class="text-2xl font-bold text-gris-billetera mb-2">¡Todo equilibrado!</h2>
+                    <p class="text-gray-600 mb-4">No tienes deudas pendientes con nadie</p>
+                    <div class="bg-lima-compartida/20 rounded-lg p-4 inline-block">
+                        <p class="text-lg font-semibold text-gris-billetera">
+                            Tu balance: {{ formatMoney(balances[currentUser.id].balance) }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Optimización de pagos -->
+                <div v-if="optimizedPayments.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-azul-claro-viaje rounded-full flex items-center justify-center">
+                            <span class="text-xl">🎯</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gris-billetera">Optimización de pagos</h2>
+                            <p class="text-sm text-gray-600">Forma más eficiente de saldar todas las deudas</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div 
+                            v-for="payment in optimizedPayments" 
+                            :key="`opt-${payment.from}-${payment.to}`"
+                            class="flex items-center justify-between p-3 bg-azul-claro-viaje/10 rounded-lg border border-azul-claro-viaje/20"
+                        >
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm font-medium text-gris-billetera">
+                                    {{ getUserName(payment.from) }}
+                                </span>
+                                <span class="text-azul-claro-viaje">→</span>
+                                <span class="text-sm font-medium text-gris-billetera">
+                                    {{ getUserName(payment.to) }}
+                                </span>
+                            </div>
+                            <span class="font-bold text-azul-tiquet">{{ formatMoney(payment.amount) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-lima-compartida/10 rounded-lg border border-lima-compartida/20">
+                        <p class="text-sm text-gris-billetera">
+                            <span class="font-semibold">Resumen:</span> Con {{ optimizedPayments.length }} pago{{ optimizedPayments.length !== 1 ? 's' : '' }}, 
+                            todas las deudas quedarán saldadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Mensaje cuando no hay usuario seleccionado -->
-    <div
-      v-else-if="!currentUser"
-      class="flex items-center justify-center py-20"
-    >
-      <div class="text-center">
-        <div class="text-6xl mb-4">⚖️</div>
-        <h2 class="text-xl font-semibold text-gris-billetera mb-2">
-          Selecciona tu usuario
-        </h2>
-        <p class="text-gray-600">
-          Necesitas seleccionar un usuario para ver los balances
-        </p>
-      </div>
-    </div>
-
-    <!-- Main content -->
-    <div v-else>
-      <!-- Header -->
-      <div class="mb-6 sm:mb-8">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">
-          Balances y liquidaciones
-        </h1>
-        <p class="text-sm sm:text-base text-gray-600">
-          Resumen de quién debe a quién y cuánto
-        </p>
-      </div>
-
-      <!-- Resumen general mejorado -->
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8"
-      >
-        <!-- Tu balance destacado -->
-        <div
-          class="sm:col-span-2 lg:col-span-2 bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-xl shadow-lg p-6 text-blanco-dividido"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold">Tu Balance</h3>
-            <div
-              class="w-10 h-10 bg-blanco-dividido/20 rounded-full flex items-center justify-center"
-            >
-              <span class="text-lg font-bold">{{
-                currentUser?.name?.charAt(0)?.toUpperCase() || "U"
-              }}</span>
-            </div>
-          </div>
-          <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold mb-2">
-              {{ formatMoney(userBalance) }}
-            </div>
-            <div class="flex items-center justify-center gap-2">
-              <div
-                class="w-3 h-3 rounded-full"
-                :class="userBalance >= 0 ? 'bg-lima-compartida' : 'bg-red-400'"
-              ></div>
-              <p class="text-sm opacity-90">
-                {{ userBalance >= 0 ? "Te deben" : "Debes" }}
-                {{ formatMoney(Math.abs(userBalance)) }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Total gastado -->
-        <div
-          class="bg-blanco-dividido rounded-lg shadow-md p-6 border-l-4 border-azul-tiquet"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-medium text-gray-600">Total Gastado</h3>
-            <div
-              class="w-8 h-8 bg-azul-tiquet/10 rounded-full flex items-center justify-center"
-            >
-              <span class="text-azul-tiquet text-lg">💸</span>
-            </div>
-          </div>
-          <p class="text-2xl font-bold text-gris-billetera">
-            {{ formatMoney(totalExpenses) }}
-          </p>
-          <p class="text-xs text-gray-500 mt-1">
-            {{ expenses.length }} gastos registrados
-          </p>
-        </div>
-
-        <!-- Usuarios participantes -->
-        <div
-          class="bg-blanco-dividido rounded-lg shadow-md p-6 border-l-4 border-lima-compartida"
-        >
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-sm font-medium text-gray-600">Usuarios</h3>
-            <div
-              class="w-8 h-8 bg-lima-compartida/10 rounded-full flex items-center justify-center"
-            >
-              <span class="text-lima-compartida text-lg">👥</span>
-            </div>
-          </div>
-          <p class="text-2xl font-bold text-gris-billetera">
-            {{ Object.keys(balances).length }}
-          </p>
-          <p class="text-xs text-gray-500 mt-1">personas en el grupo</p>
-        </div>
-      </div>
-
-      <!-- Balances de todos los usuarios con nuevo diseño -->
-      <div class="bg-blanco-dividido rounded-lg shadow-md p-6 mb-8">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-semibold text-gris-billetera">
-            Resumen de Balances
-          </h2>
-          <div class="flex items-center gap-2 text-sm text-gray-600">
-            <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-lima-compartida rounded-full"></div>
-              <span>A favor</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span>En deuda</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-4">
-          <div
-            v-for="(balance, userId) in balances"
-            :key="userId"
-            class="flex items-center justify-between p-4 rounded-xl transition-all duration-200 hover:shadow-md"
-            :class="[
-              parseInt(userId) === currentUser?.id
-                ? 'bg-azul-tiquet/5 border-2 border-azul-tiquet/20'
-                : 'bg-gray-50 hover:bg-gray-100',
-              balance.balance >= 0
-                ? 'border-l-4 border-l-lima-compartida'
-                : 'border-l-4 border-l-red-500',
-            ]"
-          >
-            <!-- Usuario info -->
-            <div class="flex items-center gap-4">
-              <div class="relative">
-                <div
-                  class="w-12 h-12 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-bold text-lg"
-                >
-                  {{ getUserName(parseInt(userId)).charAt(0).toUpperCase() }}
-                </div>
-                <div
-                  v-if="parseInt(userId) === currentUser?.id"
-                  class="absolute -top-1 -right-1 w-5 h-5 bg-lima-compartida rounded-full flex items-center justify-center"
-                >
-                  <span class="text-gris-billetera text-xs font-bold">✓</span>
-                </div>
-              </div>
-              <div>
-                <h3 class="font-semibold text-gris-billetera text-lg">
-                  {{ getUserName(parseInt(userId)) }}
-                  <span
-                    v-if="parseInt(userId) === currentUser?.id"
-                    class="text-sm text-azul-tiquet font-normal"
-                    >(Tú)</span
-                  >
-                </h3>
-                <div class="flex items-center gap-4 text-sm text-gray-600">
-                  <span>Gastó: {{ formatMoney(balance.totalSpent) }}</span>
-                  <span>Debe: {{ formatMoney(balance.owes) }}</span>
-                  <span>Le deben: {{ formatMoney(balance.owedToThem) }}</span>
-                  <span
-                    >Gastos: {{ getUserExpenseCount(parseInt(userId)) }}</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Balance -->
-            <div class="text-right">
-              <div
-                class="text-2xl font-bold mb-1"
-                :class="
-                  balance.balance >= 0 ? 'text-lima-compartida' : 'text-red-500'
-                "
-              >
-                {{ balance.balance >= 0 ? "+" : ""
-                }}{{ formatMoney(balance.balance) }}
-              </div>
-              <div
-                class="text-xs font-medium px-3 py-1 rounded-full"
-                :class="
-                  balance.balance >= 0
-                    ? 'bg-lima-compartida/10 text-lima-compartida'
-                    : 'bg-red-100 text-red-600'
-                "
-              >
-                {{ balance.balance >= 0 ? "Le deben" : "Debe" }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sugerencias de pago rediseñadas -->
-      <div
-        class="bg-gradient-to-br from-marfil-mapamundi to-blanco-dividido rounded-lg shadow-md p-6"
-      >
-        <div class="flex items-center gap-3 mb-6">
-          <div
-            class="w-10 h-10 bg-lima-compartida rounded-full flex items-center justify-center"
-          >
-            <span class="text-gris-billetera text-lg">💡</span>
-          </div>
-          <div>
-            <h2 class="text-xl font-semibold text-gris-billetera">
-              Sugerencias de Pago
-            </h2>
-            <p class="text-sm text-gray-600">
-              Para saldar todas las deudas de forma óptima
-            </p>
-          </div>
-        </div>
-
-        <div
-          v-if="suggestedSettlements.length === 0"
-          class="bg-lima-compartida/5 rounded-lg p-8 text-center border border-lima-compartida/20"
-        >
-          <div
-            class="w-16 h-16 bg-lima-compartida/20 rounded-full flex items-center justify-center mx-auto mb-4"
-          >
-            <span class="text-lima-compartida text-2xl">✅</span>
-          </div>
-          <h3 class="text-lg font-semibold text-gris-billetera mb-2">
-            ¡Todo está saldado!
-          </h3>
-          <p class="text-gray-600">
-            No hay deudas pendientes entre los miembros del grupo.
-          </p>
-        </div>
-
-        <div v-else class="space-y-4">
-          <div
-            v-for="(settlement, index) in suggestedSettlements"
-            :key="`${settlement.from}-${settlement.to}`"
-            class="bg-blanco-dividido rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
-          >
-            <div class="flex items-center justify-between">
-              <!-- Lado izquierdo: Quien paga -->
-              <div class="flex items-center gap-4">
-                <div class="flex flex-col items-center">
-                  <div
-                    class="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center border-2 border-red-200"
-                  >
-                    <span class="text-red-700 font-bold text-lg">
-                      {{ getUserName(settlement.from).charAt(0).toUpperCase() }}
-                    </span>
-                  </div>
-                  <span class="text-xs text-gray-500 mt-1">Paga</span>
-                </div>
-                <div>
-                  <p class="font-semibold text-gris-billetera">
-                    {{ getUserName(settlement.from) }}
-                  </p>
-                  <p class="text-sm text-gray-600">debe pagar</p>
-                </div>
-              </div>
-
-              <!-- Centro: Flecha y cantidad -->
-              <div class="flex flex-col items-center px-6">
-                <div class="text-2xl font-bold text-azul-tiquet mb-1">
-                  {{ formatMoney(settlement.amount) }}
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-0.5 bg-azul-claro-viaje"></div>
-                  <span class="text-azul-tiquet">→</span>
-                  <div class="w-8 h-0.5 bg-azul-claro-viaje"></div>
-                </div>
-              </div>
-
-              <!-- Lado derecho: Quien recibe -->
-              <div class="flex items-center gap-4">
-                <div class="text-right">
-                  <p class="font-semibold text-gris-billetera">
-                    {{ getUserName(settlement.to) }}
-                  </p>
-                  <p class="text-sm text-gray-600">recibe el pago</p>
-                </div>
-                <div class="flex flex-col items-center">
-                  <div
-                    class="w-14 h-14 bg-lima-compartida/20 rounded-full flex items-center justify-center border-2 border-lima-compartida/30"
-                  >
-                    <span class="text-lima-compartida font-bold text-lg">
-                      {{ getUserName(settlement.to).charAt(0).toUpperCase() }}
-                    </span>
-                  </div>
-                  <span class="text-xs text-gray-500 mt-1">Recibe</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Botón de acción -->
-            <div class="mt-4 pt-4 border-t border-gray-100">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600"
-                  >💳 Pago sugerido #{{ index + 1 }}</span
-                >
-                <button
-                  @click="markAsSettled(settlement)"
-                  class="bg-lima-compartida hover:bg-lima-compartida/80 text-gris-billetera font-medium px-4 py-2 rounded-lg transition-all duration-200 text-sm hover:shadow-md"
-                >
-                  ✓ Marcar como pagado
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Nota informativa -->
-          <div
-            class="mt-6 p-4 bg-azul-claro-viaje/10 rounded-lg border border-azul-claro-viaje/20"
-          >
-            <div class="flex items-start gap-3">
-              <span class="text-azul-tiquet text-lg mt-0.5">ℹ️</span>
-              <div>
-                <p class="text-sm text-azul-tiquet font-medium mb-1">
-                  ¿Cómo funciona?
-                </p>
-                <p class="text-xs text-gray-600">
-                  Estas son las transferencias mínimas necesarias para que todos
-                  queden en paz. Una vez realizados estos pagos, todos los
-                  balances quedarán en 0.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
-import { useExpenseStore } from "~/stores/expense.store";
-import { useUserStore } from "~/stores/user.store";
-import { useAlertStore } from "~/stores/alert.store";
-import { useFormatters } from "~/composables/useFormatters";
+import { ref, computed, onMounted, watch } from 'vue'
+import { useExpenseStore } from '~/stores/expense.store'
+import { useUserStore } from '~/stores/user.store'
+import { useAlertStore } from '~/stores/alert.store'
+import { useContextStore } from '~/stores/context.store'
+import { useDineroStore } from '~/stores/dinero.store'
 
 // Stores
-const expenseStore = useExpenseStore();
-const userStore = useUserStore();
-const alertStore = useAlertStore();
-
-// Composables
-const { formatMoney } = useFormatters();
+const expenseStore = useExpenseStore()
+const userStore = useUserStore()
+const alertStore = useAlertStore()
+const contextStore = useContextStore()
+const dineroStore = useDineroStore()
 
 // Computed properties
-const expenses = computed(() => expenseStore.getAllExpenses);
-const totalExpenses = computed(() => expenseStore.getTotalExpenses);
-const balances = computed(() => expenseStore.getBalances);
-const currentUser = computed(() => userStore.getCurrentUser);
-const isLoading = computed(() => userStore.isLoading || expenseStore.isLoading);
+const currentUser = computed(() => userStore.getCurrentUser)
+const selectedDinero = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    return selectedDineroId ? dineroStore.getDineroById(selectedDineroId) : null
+})
+const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading || contextStore.isLoading || dineroStore.isLoading)
 
-const userBalance = computed(() => {
-  if (!currentUser.value) return 0;
-  const userBalances = balances.value[currentUser.value.id];
-  return userBalances ? userBalances.balance : 0;
-});
-
-const suggestedSettlements = computed(() => {
-  const settlements = [];
-  const currentBalances = balances.value;
-
-  // Filtrar balances válidos y separarlos en deudores y acreedores
-  const debtors = [];
-  const creditors = [];
-
-  Object.entries(currentBalances).forEach(([userId, balanceData]) => {
-    const balance = balanceData.balance;
-    const userIdInt = parseInt(userId);
+const balances = computed(() => {
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return {}
     
-    if (balance < -0.01) { // Considera diferencias menores a 1 centavo como 0
-      debtors.push({
-        userId: userIdInt,
-        amount: Math.abs(balance),
-        name: getUserName(userIdInt)
-      });
-    } else if (balance > 0.01) {
-      creditors.push({
-        userId: userIdInt,
-        amount: balance,
-        name: getUserName(userIdInt)
-      });
-    }
-  });
+    return expenseStore.getBalancesByDinero(selectedDineroId)
+})
 
-  // Si no hay deudores o acreedores, no hay liquidaciones
-  if (debtors.length === 0 || creditors.length === 0) {
-    return [];
-  }
-
-  // Crear copias para manipular
-  const debtorsCopy = [...debtors];
-  const creditorsCopy = [...creditors];
-
-  // Ordenar por cantidad (mayor primero para optimizar)
-  debtorsCopy.sort((a, b) => b.amount - a.amount);
-  creditorsCopy.sort((a, b) => b.amount - a.amount);
-
-  // Algoritmo de liquidación greedy optimizado
-  let debtorIndex = 0;
-  let creditorIndex = 0;
-
-  while (debtorIndex < debtorsCopy.length && creditorIndex < creditorsCopy.length) {
-    const debtor = debtorsCopy[debtorIndex];
-    const creditor = creditorsCopy[creditorIndex];
+// Computed para deudas específicas
+const peopleWhoOweMe = computed(() => {
+    if (!currentUser.value) return []
     
-    // Calcular el monto a transferir (mínimo entre deuda y crédito)
-    const transferAmount = Math.min(debtor.amount, creditor.amount);
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return []
     
-    // Solo crear liquidación si el monto es significativo (más de 1 centavo)
-    if (transferAmount >= 0.01) {
-      settlements.push({
-        from: debtor.userId,
-        to: creditor.userId,
-        amount: Math.round(transferAmount * 100) / 100 // Redondear a centavos
-      });
-      
-      // Actualizar montos restantes
-      debtor.amount -= transferAmount;
-      creditor.amount -= transferAmount;
-    }
+    const debts = []
+    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+    
+    // Agrupar por usuario las deudas hacia mí
+    const debtsByUser = {}
+    
+    expensesByDinero.forEach(expense => {
+        // Solo considerar gastos que yo pagué
+        if (expense.paidBy !== currentUser.value.id) return
+        
+        expense.splits?.forEach(split => {
+            const userId = parseInt(split.userId)
+            const amount = parseFloat(split.amount)
+            
+            // Solo considerar otros usuarios que no han pagado
+            if (userId !== currentUser.value.id) {
+                const hasPaid = expense.payments && expense.payments[userId]
+                if (!hasPaid) {
+                    if (!debtsByUser[userId]) {
+                        debtsByUser[userId] = {
+                            userId,
+                            amount: 0,
+                            expenseCount: 0,
+                            expenses: []
+                        }
+                    }
+                    debtsByUser[userId].amount += amount
+                    debtsByUser[userId].expenseCount += 1
+                    debtsByUser[userId].expenses.push(expense)
+                }
+            }
+        })
+    })
+    
+    return Object.values(debtsByUser)
+        .filter(debt => debt.amount > 0)
+        .sort((a, b) => b.amount - a.amount)
+})
 
-    // Avanzar al siguiente deudor o acreedor si ya está saldado
-    if (debtor.amount < 0.01) {
-      debtorIndex++;
+const peopleIOwe = computed(() => {
+    if (!currentUser.value) return []
+    
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return []
+    
+    const debts = []
+    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+    
+    // Agrupar por usuario las deudas que tengo
+    const debtsByUser = {}
+    
+    expensesByDinero.forEach(expense => {
+        // Solo considerar gastos que otros pagaron y yo participé
+        if (expense.paidBy === currentUser.value.id) return
+        
+        expense.splits?.forEach(split => {
+            const userId = parseInt(split.userId)
+            const amount = parseFloat(split.amount)
+            
+            // Solo mi parte de la deuda
+            if (userId === currentUser.value.id) {
+                const hasPaid = expense.payments && expense.payments[currentUser.value.id]
+                if (!hasPaid) {
+                    const payerId = expense.paidBy
+                    if (!debtsByUser[payerId]) {
+                        debtsByUser[payerId] = {
+                            userId: payerId,
+                            amount: 0,
+                            expenseCount: 0,
+                            expenses: []
+                        }
+                    }
+                    debtsByUser[payerId].amount += amount
+                    debtsByUser[payerId].expenseCount += 1
+                    debtsByUser[payerId].expenses.push(expense)
+                }
+            }
+        })
+    })
+    
+    return Object.values(debtsByUser)
+        .filter(debt => debt.amount > 0)
+        .sort((a, b) => b.amount - a.amount)
+})
+
+const otherUsers = computed(() => {
+    if (!currentUser.value) return []
+    
+    const debtUserIds = new Set([
+        ...peopleWhoOweMe.value.map(debt => debt.userId),
+        ...peopleIOwe.value.map(debt => debt.userId)
+    ])
+    
+    return Object.entries(balances.value)
+        .filter(([userId, balance]) => {
+            return userId != currentUser.value.id && !debtUserIds.has(parseInt(userId))
+        })
+        .map(([userId, balance]) => ({
+            userId: parseInt(userId),
+            balance: balance.balance
+        }))
+        .sort((a, b) => getUserName(a.userId).localeCompare(getUserName(b.userId)))
+})
+
+const optimizedPayments = computed(() => {
+    const payments = []
+    const balancesCopy = { ...balances.value }
+    
+    // Convertir a arrays y ordenar
+    const debtors = Object.entries(balancesCopy)
+        .filter(([userId, balance]) => balance.balance < 0)
+        .map(([userId, balance]) => ({ userId: parseInt(userId), amount: -balance.balance }))
+        .sort((a, b) => b.amount - a.amount)
+    
+    const creditors = Object.entries(balancesCopy)
+        .filter(([userId, balance]) => balance.balance > 0)
+        .map(([userId, balance]) => ({ userId: parseInt(userId), amount: balance.balance }))
+        .sort((a, b) => b.amount - a.amount)
+    
+    // Algoritmo de optimización
+    let i = 0, j = 0
+    while (i < debtors.length && j < creditors.length) {
+        const debt = debtors[i]
+        const credit = creditors[j]
+        
+        const paymentAmount = Math.min(debt.amount, credit.amount)
+        
+        if (paymentAmount > 0.01) { // Evitar pagos de centavos
+            payments.push({
+                from: debt.userId,
+                to: credit.userId,
+                amount: paymentAmount
+            })
+        }
+        
+        debt.amount -= paymentAmount
+        credit.amount -= paymentAmount
+        
+        if (debt.amount <= 0.01) i++
+        if (credit.amount <= 0.01) j++
     }
-    if (creditor.amount < 0.01) {
-      creditorIndex++;
-    }
-  }
-  
-  console.log('suggestedSettlements');
-  return settlements;
-});
+    
+    return payments
+})
 
 // Methods
 const getUserName = (userId) => {
-  const user = userStore.getUserById(userId);
-  return user ? user.name : "Usuario desconocido";
-};
+    const user = userStore.getUserById(userId)
+    return user ? user.name : 'Usuario desconocido'
+}
 
-const getUserExpenseCount = (userId) => {
-  return expenseStore.getExpensesByUser(userId).length;
-};
+const formatMoney = (amount) => {
+    return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(amount)
+}
 
-const markAsSettled = async (settlement) => {
-  try {
-    // Crear un registro de pago directo entre usuarios
-    const paymentData = {
-      title: `Pago de ${getUserName(settlement.from)} a ${getUserName(settlement.to)}`,
-      amount: settlement.amount,
-      category: 'pago',
-      description: `Liquidación directa de deuda`,
-      paidBy: settlement.to, // Quien recibe se considera que "pagó" el gasto
-      participants: [settlement.from], // Solo el que debe participa
-      isSettlement: true // Marcar como liquidación
-    };
+const sendReminder = async (userId, amount) => {
+    const userName = getUserName(userId)
+    alertStore.info(`Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
+    console.log('sendReminder', { userId, amount, userName })
+}
 
-    await expenseStore.addExpense(paymentData);
-    alertStore.success(
-      `Pago de ${formatMoney(settlement.amount)} registrado correctamente`
-    );
-    console.log('markAsSettled');
-  } catch (error) {
-    console.error('Error al registrar el pago:', error);
-    alertStore.error('Error al registrar el pago');
-  }
-};
+const payDebt = async (creditorId, amount) => {
+    const creditorName = getUserName(creditorId)
+    
+    // Buscar todos los gastos donde debo dinero a esta persona
+    const selectedDineroId = contextStore.getSelectedDineroId
+    if (!selectedDineroId) return
+    
+    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+    const expensesToPay = []
+    
+    expensesByDinero.forEach(expense => {
+        if (expense.paidBy === creditorId && expense.participants?.includes(currentUser.value.id)) {
+            const hasPaid = expense.payments && expense.payments[currentUser.value.id]
+            if (!hasPaid) {
+                expensesToPay.push(expense.id)
+            }
+        }
+    })
+    
+    try {
+        // Marcar todos los gastos relevantes como pagados
+        for (const expenseId of expensesToPay) {
+            await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
+        }
+        
+        alertStore.success(`Has pagado ${formatMoney(amount)} a ${creditorName}`)
+        console.log('payDebt', { creditorId, amount, creditorName, expensesCount: expensesToPay.length })
+    } catch (error) {
+        alertStore.error('Error al procesar el pago')
+        console.error('Error paying debt:', error)
+    }
+}
 
 // Cargar datos al montar el componente
 onMounted(async () => {
-  try {
-    // Cargar usuarios y gastos actualizados
-    await userStore.fetchUsers();
-    await expenseStore.fetchExpenses();
-  } catch (error) {
-    console.error("Error al cargar datos:", error);
-    alertStore.error("Error al cargar los datos");
-  }
-});
+    console.log('Balances: Loading data...')
+    
+    try {
+        // 1. Cargar dineros primero
+        console.log('1. Loading dineros...')
+        await dineroStore.initializeDineros()
+        
+        // 2. Inicializar contexto con dinero seleccionado
+        console.log('2. Initializing context...')
+        await contextStore.initializeSelectedDinero()
+        
+        // 3. Cargar usuarios
+        console.log('3. Loading users...')
+        if (userStore.users.length === 0) {
+            await userStore.initializeUsers()
+        }
+        
+        // 4. Cargar gastos
+        console.log('4. Loading expenses...')
+        if (expenseStore.expenses.length === 0) {
+            await expenseStore.initializeExpenses()
+        }
+        
+        console.log('Balances: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)
+    } catch (error) {
+        console.error('Error al cargar datos:', error)
+        alertStore.error('Error al cargar los datos')
+    }
+})
 
-console.log("balances-page");
+// Watcher para refrescar cuando cambie el dinero seleccionado
+watch(() => contextStore.getSelectedDineroId, async (newDineroId, oldDineroId) => {
+    if (newDineroId !== oldDineroId) {
+        console.log('Dinero changed in balances:', { oldDineroId, newDineroId })
+        // Los datos se actualizarán automáticamente a través de los computed
+    }
+}, { immediate: true })
+
+console.log('balances')
 </script>
