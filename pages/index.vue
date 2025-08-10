@@ -39,6 +39,13 @@
                                 <p class="text-xs opacity-80">Total del grupo</p>
                                 <p class="text-xl font-bold">{{ formatMoney(totalExpenses) }}</p>
                             </div>
+                            <button 
+                                @click="showPanelConfig = true"
+                                class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-3 py-2 hover:bg-blanco-dividido/30 transition-colors duration-200"
+                                title="Personalizar dashboard"
+                            >
+                                <span class="text-lg">⚙️</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -103,7 +110,7 @@
             </div>
 
             <!-- Panel de alertas -->
-            <div v-if="hasAlerts" class="mb-8">
+            <div v-if="hasAlerts && isPanelVisible('alerts')" class="mb-8">
                 <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400 shadow-lg">
                     <h3 class="text-lg font-bold text-gris-billetera mb-4 flex items-center gap-2">
                         <span class="text-yellow-500">⚠️</span>
@@ -160,7 +167,7 @@
             </div>
 
             <!-- Resumen de balances -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div v-if="isPanelVisible('summary')" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 <!-- Total gastado -->
                 <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-tiquet/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="flex items-center justify-between mb-4">
@@ -222,7 +229,7 @@
             </div>
 
             <!-- Presupuestos detallados -->
-            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+            <div v-if="isPanelVisible('budgets')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2 sm:gap-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
@@ -444,7 +451,7 @@
             </div>
 
             <!-- Estadísticas por categoría -->
-            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" data-category-section>
+            <div v-if="isPanelVisible('categories')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" data-category-section>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2 sm:gap-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-azul-tiquet/10 rounded-xl flex items-center justify-center">
@@ -533,7 +540,7 @@
             </div>
 
             <!-- Lista de gastos recientes -->
-            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+            <div v-if="isPanelVisible('recent')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
@@ -626,7 +633,7 @@
             </div>
 
             <!-- Pagos pendientes -->
-            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-red-200/50">
+            <div v-if="isPanelVisible('pending')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-red-200/50">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
@@ -712,7 +719,7 @@
             </div>
 
             <!-- Resumen de balances personales -->
-            <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6" data-balance-section>
+            <div v-if="isPanelVisible('balance')" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6" data-balance-section>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
                     <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Mi situación financiera</h2>
                     <NuxtLink 
@@ -857,6 +864,72 @@
                 v-if="showBudgetModal"
                 @close="showBudgetModal = false"
             />
+
+            <!-- Modal de configuración de paneles -->
+            <div v-if="showPanelConfig" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="bg-blanco-dividido rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-azul-tiquet/10 rounded-xl flex items-center justify-center">
+                                    <span class="text-xl">⚙️</span>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-gris-billetera">Configurar Dashboard</h2>
+                                    <p class="text-sm text-gray-600">Personaliza qué paneles quieres ver</p>
+                                </div>
+                            </div>
+                            <button 
+                                @click="showPanelConfig = false"
+                                class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors"
+                            >
+                                <span class="text-gray-600">✕</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div 
+                                v-for="panel in dashboardPanels" 
+                                :key="panel.id"
+                                class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">{{ panel.icon }}</span>
+                                    <div>
+                                        <h3 class="font-semibold text-gris-billetera">{{ panel.name }}</h3>
+                                        <p class="text-xs text-gray-600">{{ panel.description }}</p>
+                                    </div>
+                                </div>
+                                
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        :checked="panel.visible"
+                                        @change="togglePanelVisibility(panel.id)"
+                                        class="sr-only peer"
+                                    >
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-azul-tiquet"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-6">
+                            <button 
+                                @click="resetPanelSettings"
+                                class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+                            >
+                                Restaurar
+                            </button>
+                            <button 
+                                @click="savePanelSettings"
+                                class="flex-1 px-4 py-3 bg-azul-tiquet text-blanco-dividido rounded-xl font-semibold hover:bg-azul-claro-viaje transition-colors"
+                            >
+                                Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -884,6 +957,67 @@ const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
 const selectedPeriod = ref('month') // week, month, year, all
 
+// Panel configuration
+const showPanelConfig = ref(false)
+const dashboardPanels = ref([
+    { 
+        id: 'alerts', 
+        name: 'Alertas importantes', 
+        icon: '⚠️', 
+        visible: true, 
+        order: 1,
+        description: 'Notificaciones y avisos importantes'
+    },
+    { 
+        id: 'summary', 
+        name: 'Resumen de balances', 
+        icon: '💰', 
+        visible: true, 
+        order: 2,
+        description: 'Total gastado, tu balance y estadísticas del período'
+    },
+    { 
+        id: 'budgets', 
+        name: 'Presupuestos activos', 
+        icon: '💼', 
+        visible: true, 
+        order: 3,
+        description: 'Control de gastos por categoría'
+    },
+    { 
+        id: 'categories', 
+        name: 'Gastos por categoría', 
+        icon: '📊', 
+        visible: true, 
+        order: 4,
+        description: 'Análisis de gastos organizados por categorías'
+    },
+    { 
+        id: 'recent', 
+        name: 'Gastos recientes', 
+        icon: '💸', 
+        visible: true, 
+        order: 5,
+        description: 'Últimos movimientos registrados'
+    },
+    { 
+        id: 'pending', 
+        name: 'Pagos pendientes', 
+        icon: '⏰', 
+        visible: true, 
+        order: 6,
+        description: 'Gastos por saldar'
+    },
+    { 
+        id: 'balance', 
+        name: 'Mi situación financiera', 
+        icon: '👥', 
+        visible: true, 
+        order: 7,
+        description: 'Detalles de quién te debe y a quién debes dinero'
+    }
+])
+
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
 const users = computed(() => userStore.getAllUsers)
@@ -893,6 +1027,18 @@ const selectedDinero = computed(() => {
 })
 const selectedDineroId = computed(() => contextStore.getSelectedDineroId)
 const isLoading = computed(() => expenseStore.isLoading || userStore.isLoading || contextStore.isLoading || dineroStore.isLoading)
+
+// Panel configuration computed
+const visiblePanels = computed(() => {
+    return dashboardPanels.value
+        .filter(panel => panel.visible)
+        .sort((a, b) => a.order - b.order)
+})
+
+const isPanelVisible = (panelId) => {
+    const panel = dashboardPanels.value.find(p => p.id === panelId)
+    return panel ? panel.visible : false
+}
 
 // Computed properties
 const expenses = computed(() => {
@@ -1810,6 +1956,9 @@ const generateReport = () => {
 
 // Manejar acciones de alertas
 const handleAlertAction = (alert) => {
+    // Activar automáticamente el panel correspondiente si está desactivado
+    activatePanelForAlert(alert.action)
+    
     switch (alert.action) {
         case 'Añadir gasto':
             showSplitExpenseModal.value = true
@@ -1826,37 +1975,125 @@ const handleAlertAction = (alert) => {
             navigateTo('/expenses')
             break
         case 'Ver categorías':
-            // Scroll hasta la sección de estadísticas por categoría
-            const categorySection = document.querySelector('[data-category-section]')
-            if (categorySection) {
-                categorySection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
-            break
         case 'Ver estadísticas':
-            // Scroll hasta la sección de gastos por categoría
-            const statsSection = document.querySelector('[data-category-section]')
-            if (statsSection) {
-                statsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
+            // Scroll hasta la sección de estadísticas por categoría después de un breve delay
+            setTimeout(() => {
+                const categorySection = document.querySelector('[data-category-section]')
+                if (categorySection) {
+                    categorySection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            }, 100)
             break
         case 'Optimizar gastos':
             navigateTo('/expenses')
             break
         case 'Enviar recordatorios':
-            // Scroll hasta la sección de balances
-            const balanceSection = document.querySelector('[data-balance-section]')
-            if (balanceSection) {
-                balanceSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }
+            // Scroll hasta la sección de balances después de un breve delay
+            setTimeout(() => {
+                const balanceSection = document.querySelector('[data-balance-section]')
+                if (balanceSection) {
+                    balanceSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            }, 100)
             break
         default:
             console.log('Alert action:', alert.action)
     }
 }
 
+// Funciones para configuración de paneles
+const togglePanelVisibility = (panelId) => {
+    const panel = dashboardPanels.value.find(p => p.id === panelId)
+    if (panel) {
+        panel.visible = !panel.visible
+    }
+}
+
+const activatePanel = (panelId) => {
+    const panel = dashboardPanels.value.find(p => p.id === panelId)
+    if (panel && !panel.visible) {
+        panel.visible = true
+        alertStore.info(`Panel "${panel.name}" activado automáticamente`)
+        
+        // Guardar la configuración actualizada
+        if (process.client) {
+            localStorage.setItem('dashboardPanelConfig', JSON.stringify(
+                dashboardPanels.value.map(panel => ({
+                    id: panel.id,
+                    visible: panel.visible,
+                    order: panel.order
+                }))
+            ))
+        }
+    }
+}
+
+const activatePanelForAlert = (alertAction) => {
+    // Mapeo de acciones de alertas a paneles específicos
+    const actionToPanelMap = {
+        'Ver categorías': 'categories',
+        'Ver estadísticas': 'categories',
+        'Ver presupuestos': 'budgets',
+        'Enviar recordatorios': 'balance',
+        'Cerca del límite': 'budgets',
+        'Presupuesto excedido': 'budgets'
+    }
+    
+    const panelId = actionToPanelMap[alertAction]
+    if (panelId) {
+        activatePanel(panelId)
+    }
+}
+
+const resetPanelSettings = () => {
+    dashboardPanels.value.forEach(panel => {
+        panel.visible = true
+    })
+}
+
+const savePanelSettings = () => {
+    // Guardar configuración en localStorage
+    if (process.client) {
+        localStorage.setItem('dashboardPanelConfig', JSON.stringify(
+            dashboardPanels.value.map(panel => ({
+                id: panel.id,
+                visible: panel.visible,
+                order: panel.order
+            }))
+        ))
+    }
+    
+    showPanelConfig.value = false
+    alertStore.success('Configuración guardada correctamente')
+}
+
+const loadPanelSettings = () => {
+    // Cargar configuración desde localStorage
+    if (process.client) {
+        const saved = localStorage.getItem('dashboardPanelConfig')
+        if (saved) {
+            try {
+                const savedConfig = JSON.parse(saved)
+                savedConfig.forEach(savedPanel => {
+                    const panel = dashboardPanels.value.find(p => p.id === savedPanel.id)
+                    if (panel) {
+                        panel.visible = savedPanel.visible
+                        panel.order = savedPanel.order
+                    }
+                })
+            } catch (error) {
+                console.error('Error loading panel configuration:', error)
+            }
+        }
+    }
+}
+
 // Cargar datos al montar el componente
 onMounted(async () => {
     console.log('Dashboard: Loading data...')
+    
+    // Cargar configuración de paneles
+    loadPanelSettings()
     
     try {
         // 1. Cargar dineros primero
