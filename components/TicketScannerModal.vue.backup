@@ -1,0 +1,784 @@
+<template>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-                <!-- Procesando imagen -->
+                <div v-if="scannerState === 'processing'" class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-azul-tiquet/10 rounded-full flex items-center justify-center mx-auto">
+                        <div class="w-8 h-8 border-3 border-azul-tiquet border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gris-billetera mb-2">Procesando con OCR...</h3>
+                        <p class="text-sm text-gray-600 mb-4">Extrayendo datos del ticket automáticamente</p>
+                        
+                        <!-- Barra de progreso -->
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                            <div 
+                                class="bg-gradient-to-r from-azul-tiquet to-lima-compartida h-2 rounded-full transition-all duration-300"
+                                :style="{ width: `${ocrProgress}%` }"
+                            ></div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ ocrProgress }}% completado</p>
+                    </div>
+                </div>  <div class="bg-blanco-dividido rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-azul-claro-viaje/20">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-6 border-b border-azul-claro-viaje/20 bg-gradient-to-r from-lima-compartida/5 to-azul-claro-viaje/5">
+                <div>
+                    <h2 class="text-xl font-bold text-gris-billetera flex items-center gap-2">
+                        <span class="text-lima-compartida">📱</span>
+                        Escanear ticket
+                    </h2>
+                    <p class="text-sm text-gray-600 mt-1">Haz una foto al ticket para extraer los datos automáticamente</p>
+                </div>
+                <button 
+                    @click="$emit('close')"
+                    class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 p-2"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Estado del escáner -->
+                <div v-if="scannerState === 'initial'" class="text-center space-y-4">
+                    <!-- Opción 1: Cámara -->
+                    <div class="bg-azul-claro-viaje/10 p-6 rounded-xl border border-azul-claro-viaje/20">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-16 h-16 bg-azul-tiquet/10 rounded-full flex items-center justify-center">
+                                <span class="text-2xl">📷</span>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="font-semibold text-gris-billetera mb-2">Tomar foto del ticket</h3>
+                                <p class="text-sm text-gray-600 mb-4">Abre la cámara y fotografía el ticket para extraer los datos automáticamente</p>
+                                <button
+                                    @click="openCamera"
+                                    class="px-6 py-3 bg-azul-tiquet text-white rounded-xl hover:bg-azul-tiquet/90 transition-all duration-200 font-medium"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <span>📷</span>
+                                        Abrir cámara
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opción 2: Subir archivo -->
+                    <div class="bg-lima-compartida/10 p-6 rounded-xl border border-lima-compartida/20">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="w-16 h-16 bg-lima-compartida/10 rounded-full flex items-center justify-center">
+                                <span class="text-2xl">📁</span>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="font-semibold text-gris-billetera mb-2">Subir imagen del ticket</h3>
+                                <p class="text-sm text-gray-600 mb-4">Selecciona una imagen del ticket desde tu dispositivo</p>
+                                <input
+                                    ref="fileInput"
+                                    type="file"
+                                    accept="image/*"
+                                    @change="handleFileUpload"
+                                    class="hidden"
+                                >
+                                <button
+                                    @click="$refs.fileInput?.click()"
+                                    class="px-6 py-3 bg-lima-compartida text-gris-billetera rounded-xl hover:bg-lima-compartida/90 transition-all duration-200 font-medium"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <span>📁</span>
+                                        Seleccionar archivo
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cámara activa -->
+                <div v-if="scannerState === 'camera'" class="space-y-4">
+                    <div class="relative bg-black rounded-xl overflow-hidden">
+                        <video
+                            ref="videoElement"
+                            autoplay
+                            playsinline
+                            class="w-full h-64 object-cover"
+                        ></video>
+                        <canvas
+                            ref="canvasElement"
+                            class="hidden"
+                        ></canvas>
+                        
+                        <!-- Overlay de guía -->
+                        <div class="absolute inset-4 border-2 border-lima-compartida border-dashed rounded-lg flex items-center justify-center">
+                            <div class="text-center text-white bg-black/50 p-3 rounded-lg">
+                                <p class="text-sm font-medium">Centra el ticket en el marco</p>
+                                <p class="text-xs opacity-80">Asegúrate de que el texto sea legible</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 justify-center">
+                        <button
+                            @click="capturePhoto"
+                            class="px-6 py-3 bg-lima-compartida text-gris-billetera rounded-xl hover:bg-lima-compartida/90 transition-all duration-200 font-medium flex items-center gap-2"
+                        >
+                            <span>📸</span>
+                            Capturar
+                        </button>
+                        <button
+                            @click="closeCamera"
+                            class="px-6 py-3 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-all duration-200 font-medium"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Procesando imagen -->
+                <div v-if="scannerState === 'processing'" class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-azul-tiquet/10 rounded-full flex items-center justify-center mx-auto">
+                        <div class="w-8 h-8 border-3 border-azul-tiquet border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gris-billetera mb-2">Procesando con OCR...</h3>
+                        <p class="text-sm text-gray-600 mb-4">Extrayendo datos del ticket automáticamente</p>
+                        
+                        <!-- Barra de progreso -->
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
+                            <div 
+                                class="bg-gradient-to-r from-azul-tiquet to-lima-compartida h-2 rounded-full transition-all duration-300"
+                                :style="{ width: `${ocrProgress}%` }"
+                            ></div>
+                        </div>
+                        <p class="text-xs text-gray-500">{{ ocrProgress }}% completado</p>
+                    </div>
+                </div>
+
+                <!-- Entrada manual de datos -->
+                <div v-if="scannerState === 'manual-input'" class="space-y-6">
+                    <!-- Imagen capturada -->
+                    <div class="bg-gray-50 p-4 rounded-xl">
+                        <h3 class="font-semibold text-gris-billetera mb-3 flex items-center gap-2">
+                            <span class="text-azul-tiquet">🖼️</span>
+                            Imagen capturada
+                        </h3>
+                        <img
+                            :src="capturedImage"
+                            alt="Ticket capturado"
+                            class="w-full max-h-32 object-contain rounded-lg bg-white border"
+                        >
+                        <p class="text-xs text-gray-600 mt-2 text-center">
+                            ℹ️ OCR en desarrollo. Por favor, introduce los datos manualmente.
+                        </p>
+                    </div>
+
+                    <!-- Formulario manual -->
+                    <div class="bg-lima-compartida/10 p-4 rounded-xl border border-lima-compartida/20">
+                        <h3 class="font-semibold text-gris-billetera mb-3 flex items-center gap-2">
+                            <span class="text-lima-compartida">✏️</span>
+                            Introduce los datos del ticket
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Total -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Total del ticket</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+                                    <input
+                                        v-model="extractedData.total"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        required
+                                        placeholder="0.00"
+                                        class="w-full pl-8 pr-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Establecimiento -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Establecimiento</label>
+                                <input
+                                    v-model="extractedData.merchant"
+                                    type="text"
+                                    placeholder="Ej: Restaurante El Buen Gusto"
+                                    class="w-full px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                >
+                            </div>
+
+                            <!-- Fecha -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
+                                <input
+                                    v-model="extractedData.date"
+                                    type="date"
+                                    class="w-full px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                >
+                            </div>
+
+                            <!-- Notas adicionales -->
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Notas (opcional)</label>
+                                <textarea
+                                    v-model="manualNotes"
+                                    rows="2"
+                                    placeholder="Detalles adicionales del ticket..."
+                                    class="w-full px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 resize-none"
+                                ></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="flex gap-3">
+                        <button
+                            @click="resetScanner"
+                            class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200"
+                        >
+                            Escanear otro
+                        </button>
+                        <button
+                            @click="useManualData"
+                            :disabled="!extractedData.total"
+                            class="flex-1 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-azul-tiquet to-lima-compartida rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            <span class="text-lima-compartida">✨</span>
+                            Usar datos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mostrar imagen capturada y datos extraídos -->
+                <div v-if="scannerState === 'results'" class="space-y-6">
+                    <!-- Imagen capturada -->
+                    <div class="bg-gray-50 p-4 rounded-xl">
+                        <h3 class="font-semibold text-gris-billetera mb-3 flex items-center gap-2">
+                            <span class="text-azul-tiquet">🖼️</span>
+                            Imagen capturada
+                        </h3>
+                        <img
+                            :src="capturedImage"
+                            alt="Ticket capturado"
+                            class="w-full max-h-32 object-contain rounded-lg bg-white border"
+                        >
+                    </div>
+
+                    <!-- Datos extraídos -->
+                    <div class="bg-lima-compartida/10 p-4 rounded-xl border border-lima-compartida/20">
+                        <h3 class="font-semibold text-gris-billetera mb-3 flex items-center gap-2">
+                            <span class="text-lima-compartida">🔍</span>
+                            Datos extraídos
+                        </h3>
+                        
+                        <div class="space-y-3">
+                            <!-- Total detectado -->
+                            <div v-if="extractedData.total" class="bg-blanco-dividido p-3 rounded-lg">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Total detectado</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        v-model="extractedData.total"
+                                        type="number"
+                                        step="0.01"
+                                        class="flex-1 px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                    >
+                                    <span class="text-lg font-bold text-lima-compartida">€</span>
+                                </div>
+                            </div>
+
+                            <!-- Establecimiento -->
+                            <div v-if="extractedData.merchant" class="bg-blanco-dividido p-3 rounded-lg">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Establecimiento</label>
+                                <input
+                                    v-model="extractedData.merchant"
+                                    type="text"
+                                    class="w-full px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                >
+                            </div>
+
+                            <!-- Fecha -->
+                            <div v-if="extractedData.date" class="bg-blanco-dividido p-3 rounded-lg">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
+                                <input
+                                    v-model="extractedData.date"
+                                    type="date"
+                                    class="w-full px-3 py-2 text-sm border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200"
+                                >
+                            </div>
+
+                            <!-- Items detectados -->
+                            <div v-if="extractedData.items && extractedData.items.length > 0" class="bg-blanco-dividido p-3 rounded-lg">
+                                <label class="block text-xs font-medium text-gray-600 mb-2">Items detectados</label>
+                                <div class="space-y-2 max-h-32 overflow-y-auto">
+                                    <div
+                                        v-for="(item, index) in extractedData.items"
+                                        :key="index"
+                                        class="flex justify-between items-center text-xs p-2 bg-gray-50 rounded"
+                                    >
+                                        <span>{{ item.name }}</span>
+                                        <span class="font-medium">{{ formatMoney(item.price) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="flex gap-3">
+                        <button
+                            @click="resetScanner"
+                            class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200"
+                        >
+                            Escanear otro
+                        </button>
+                        <button
+                            @click="useExtractedData"
+                            :disabled="!extractedData.total"
+                            class="flex-1 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-azul-tiquet to-lima-compartida rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            <span class="text-lima-compartida">✨</span>
+                            Usar datos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div v-if="scannerState === 'error'" class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                        <span class="text-2xl">❌</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gris-billetera mb-2">Error al procesar</h3>
+                        <p class="text-sm text-gray-600 mb-4">{{ errorMessage }}</p>
+                        <button
+                            @click="resetScanner"
+                            class="px-6 py-3 bg-azul-tiquet text-white rounded-xl hover:bg-azul-tiquet/90 transition-all duration-200 font-medium"
+                        >
+                            Intentar de nuevo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import formatearTotal from '~/utils/formatMoney'
+import { createWorker } from 'tesseract.js'
+
+// Alias para mantener consistencia
+const formatMoney = formatearTotal
+
+const emit = defineEmits(['close', 'data-extracted'])
+
+// Stores
+const alertStore = useAlertStore()
+
+// Estado del escáner
+const scannerState = ref('initial') // 'initial', 'camera', 'processing', 'manual-input', 'results', 'error'
+const errorMessage = ref('')
+const manualNotes = ref('')
+const ocrProgress = ref(0)
+
+// OCR Worker
+let ocrWorker = null
+
+// Referencias del DOM
+const videoElement = ref(null)
+const canvasElement = ref(null)
+const fileInput = ref(null)
+
+// Datos
+const capturedImage = ref('')
+const extractedData = ref({
+    total: null,
+    merchant: '',
+    date: '',
+    items: []
+})
+
+// Stream de la cámara
+let currentStream = null
+
+// Métodos
+const openCamera = async () => {
+    try {
+        scannerState.value = 'camera'
+        
+        // Solicitar permisos de cámara
+        currentStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'environment', // Cámara trasera preferida
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        })
+        
+        if (videoElement.value) {
+            videoElement.value.srcObject = currentStream
+        }
+    } catch (error) {
+        console.error('Error accessing camera:', error)
+        scannerState.value = 'error'
+        errorMessage.value = 'No se pudo acceder a la cámara. Verifica los permisos.'
+    }
+}
+
+const closeCamera = () => {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop())
+        currentStream = null
+    }
+    scannerState.value = 'initial'
+}
+
+const capturePhoto = () => {
+    if (!videoElement.value || !canvasElement.value) return
+    
+    const video = videoElement.value
+    const canvas = canvasElement.value
+    const context = canvas.getContext('2d')
+    
+    // Configurar el canvas con las dimensiones del video
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    
+    // Dibujar el frame actual del video en el canvas
+    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    
+    // Convertir a imagen
+    capturedImage.value = canvas.toDataURL('image/jpeg', 0.8)
+    
+    // Cerrar la cámara
+    closeCamera()
+    
+    // Procesar la imagen
+    processImage(capturedImage.value)
+}
+
+const handleFileUpload = (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (e) => {
+        capturedImage.value = e.target.result
+        processImage(e.target.result)
+    }
+    reader.readAsDataURL(file)
+}
+
+const processImage = async (imageData) => {
+    scannerState.value = 'processing'
+    ocrProgress.value = 0
+    
+    try {
+        // Crear worker de Tesseract.js
+        ocrWorker = await createWorker('spa', 1, {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    ocrProgress.value = Math.round(m.progress * 100)
+                }
+            }
+        })
+        
+        // Realizar OCR en la imagen
+        const { data: { text } } = await ocrWorker.recognize(imageData)
+        
+        // Terminar el worker
+        await ocrWorker.terminate()
+        ocrWorker = null
+        
+        // Parsear el texto extraído
+        const parsedData = parseReceiptText(text)
+        
+        // Si se detectaron datos, mostrar resultados
+        if (parsedData.total || parsedData.merchant) {
+            extractedData.value = parsedData
+            scannerState.value = 'results'
+            alertStore.success('Datos extraídos del ticket correctamente')
+        } else {
+            // Si no se detectó información útil, permitir entrada manual
+            extractedData.value = {
+                total: null,
+                merchant: '',
+                date: new Date().toISOString().split('T')[0],
+                items: [],
+                rawText: text // Guardar texto completo para referencia
+            }
+            scannerState.value = 'manual-input'
+            alertStore.info('No se pudieron detectar datos automáticamente. Introduce los datos manualmente.')
+        }
+        
+        console.log('processImage - OCR completed')
+    } catch (error) {
+        console.error('Error processing image:', error)
+        
+        // Limpiar worker en caso de error
+        if (ocrWorker) {
+            await ocrWorker.terminate()
+            ocrWorker = null
+        }
+        
+        // Permitir entrada manual como fallback
+        extractedData.value = {
+            total: null,
+            merchant: '',
+            date: new Date().toISOString().split('T')[0],
+            items: []
+        }
+        scannerState.value = 'manual-input'
+        alertStore.warning('Error en el OCR. Introduce los datos manualmente.')
+    }
+}
+
+// Función para parsear el texto extraído del OCR
+const parseReceiptText = (text) => {
+    console.log('Raw OCR text:', text)
+    
+    const result = {
+        total: null,
+        merchant: '',
+        date: new Date().toISOString().split('T')[0],
+        items: [],
+        rawText: text
+    }
+    
+    // Limpiar y normalizar el texto
+    const cleanText = text.replace(/\n+/g, '\n').trim()
+    const lines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+    
+    // Buscar total (patrones comunes en tickets)
+    const totalPatterns = [
+        /total[:\s]*€?\s*(\d+[,\.]\d{2})/i,
+        /importe[:\s]*€?\s*(\d+[,\.]\d{2})/i,
+        /suma[:\s]*€?\s*(\d+[,\.]\d{2})/i,
+        /€\s*(\d+[,\.]\d{2})\s*$/, // Precio al final de línea
+        /(\d+[,\.]\d{2})\s*€?\s*total/i,
+        /(\d+[,\.]\d{2})\s*euros?\s*$/i
+    ]
+    
+    for (const line of lines) {
+        for (const pattern of totalPatterns) {
+            const match = line.match(pattern)
+            if (match) {
+                const amount = parseFloat(match[1].replace(',', '.'))
+                if (amount > 0 && amount < 1000) { // Filtro razonable para tickets
+                    result.total = amount
+                    break
+                }
+            }
+        }
+        if (result.total) break
+    }
+    
+    // Buscar nombre del establecimiento (usualmente en las primeras líneas)
+    const merchantPatterns = [
+        /^[A-Z\s&]+$/, // Líneas en mayúsculas (nombres de tiendas)
+        /restaurante\s+(.+)/i,
+        /bar\s+(.+)/i,
+        /cafe\s+(.+)/i,
+        /supermercado\s+(.+)/i,
+        /tienda\s+(.+)/i
+    ]
+    
+    for (let i = 0; i < Math.min(5, lines.length); i++) {
+        const line = lines[i]
+        
+        // Evitar líneas que parecen direcciones o números
+        if (line.match(/^\d+/) || line.match(/c\/|calle|avenida|plaza/i)) continue
+        
+        for (const pattern of merchantPatterns) {
+            if (pattern.test(line)) {
+                if (pattern.source.includes('(')) {
+                    const match = line.match(pattern)
+                    result.merchant = match[1].trim()
+                } else {
+                    result.merchant = line.trim()
+                }
+                break
+            }
+        }
+        
+        // Si la línea parece un nombre de negocio (letras y espacios, cierta longitud)
+        if (!result.merchant && line.length > 3 && line.length < 50 && 
+            /^[A-Za-zÀ-ÿ\s&\-'\.]+$/.test(line) && 
+            !line.match(/direccion|telefono|horario|factura|ticket/i)) {
+            result.merchant = line.trim()
+            break
+        }
+    }
+    
+    // Buscar fecha (varios formatos posibles)
+    const datePatterns = [
+        /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/,
+        /(\d{1,2})\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(\d{2,4})/i,
+        /(\d{2,4})[\/\-](\d{1,2})[\/\-](\d{1,2})/
+    ]
+    
+    for (const line of lines) {
+        for (const pattern of datePatterns) {
+            const match = line.match(pattern)
+            if (match) {
+                try {
+                    let day, month, year
+                    if (pattern.source.includes('enero|febrero')) {
+                        // Formato con nombre de mes
+                        day = parseInt(match[1])
+                        const months = ['enero','febrero','marzo','abril','mayo','junio',
+                                      'julio','agosto','septiembre','octubre','noviembre','diciembre']
+                        month = months.indexOf(match[2].toLowerCase()) + 1
+                        year = parseInt(match[3])
+                    } else {
+                        // Formato numérico - asumir dd/mm/yyyy o yyyy/mm/dd
+                        if (match[1].length === 4) {
+                            year = parseInt(match[1])
+                            month = parseInt(match[2])
+                            day = parseInt(match[3])
+                        } else {
+                            day = parseInt(match[1])
+                            month = parseInt(match[2])
+                            year = parseInt(match[3])
+                        }
+                    }
+                    
+                    // Ajustar año si es de 2 dígitos
+                    if (year < 100) {
+                        year += year < 50 ? 2000 : 1900
+                    }
+                    
+                    // Validar fecha
+                    if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 2020 && year <= 2030) {
+                        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+                        result.date = dateStr
+                        break
+                    }
+                } catch (e) {
+                    // Ignorar errores de parsing de fecha
+                }
+            }
+        }
+        if (result.date !== new Date().toISOString().split('T')[0]) break
+    }
+    
+    console.log('parseReceiptText result:', result)
+    return result
+}
+
+const extractMockData = () => {
+    // Simulación de datos extraídos por OCR
+    // En una implementación real, aquí llamarías a un servicio OCR como:
+    // - Google Cloud Vision API
+    // - AWS Textract
+    // - Azure Computer Vision
+    // - Tesseract.js para OCR local
+    
+    const mockTotals = [12.50, 23.75, 45.20, 67.80, 15.30, 89.90]
+    const mockMerchants = ['Restaurante El Buen Gusto', 'Supermercado Fresh', 'Cafetería Central', 'Farmacia San Juan', 'Librería Cervantes']
+    const mockItems = [
+        [
+            { name: 'Ensalada César', price: 8.50 },
+            { name: 'Agua con gas', price: 2.50 },
+            { name: 'Café', price: 1.50 }
+        ],
+        [
+            { name: 'Pan integral', price: 2.20 },
+            { name: 'Leche desnatada', price: 1.85 },
+            { name: 'Yogur natural', price: 3.50 }
+        ]
+    ]
+    
+    const randomTotal = mockTotals[Math.floor(Math.random() * mockTotals.length)]
+    const randomMerchant = mockMerchants[Math.floor(Math.random() * mockMerchants.length)]
+    const randomItems = mockItems[Math.floor(Math.random() * mockItems.length)]
+    
+    return {
+        total: randomTotal,
+        merchant: randomMerchant,
+        date: new Date().toISOString().split('T')[0],
+        items: randomItems
+    }
+}
+
+const resetScanner = () => {
+    scannerState.value = 'initial'
+    capturedImage.value = ''
+    manualNotes.value = ''
+    extractedData.value = {
+        total: null,
+        merchant: '',
+        date: '',
+        items: []
+    }
+    errorMessage.value = ''
+    ocrProgress.value = 0
+    
+    // Limpiar worker si existe
+    if (ocrWorker) {
+        ocrWorker.terminate()
+        ocrWorker = null
+    }
+}
+
+const useExtractedData = () => {
+    // Emitir los datos extraídos al componente padre
+    emit('data-extracted', {
+        title: extractedData.value.merchant || 'Gasto desde ticket',
+        amount: extractedData.value.total,
+        category: inferCategory(extractedData.value.merchant, extractedData.value.items),
+        description: `Ticket escaneado - ${extractedData.value.items.length} items`,
+        date: extractedData.value.date,
+        items: extractedData.value.items
+    })
+    
+    emit('close')
+    console.log('useExtractedData')
+}
+
+const useManualData = () => {
+    // Emitir los datos introducidos manualmente
+    emit('data-extracted', {
+        title: extractedData.value.merchant || 'Gasto desde ticket',
+        amount: parseFloat(extractedData.value.total),
+        category: inferCategory(extractedData.value.merchant, []),
+        description: manualNotes.value || 'Gasto creado desde ticket escaneado',
+        date: extractedData.value.date,
+        items: []
+    })
+    
+    emit('close')
+    console.log('useManualData')
+}
+
+const inferCategory = (merchant, items) => {
+    // Inferir categoría basada en el establecimiento y los items
+    const merchantLower = merchant.toLowerCase()
+    
+    if (merchantLower.includes('restaurante') || merchantLower.includes('cafetería') || merchantLower.includes('bar')) {
+        return 'comida'
+    }
+    if (merchantLower.includes('supermercado') || merchantLower.includes('mercado')) {
+        return 'compras'
+    }
+    if (merchantLower.includes('farmacia')) {
+        return 'otros'
+    }
+    if (merchantLower.includes('transporte') || merchantLower.includes('taxi') || merchantLower.includes('metro')) {
+        return 'transporte'
+    }
+    
+    return 'otros'
+}
+
+// Limpiar al desmontar el componente
+onUnmounted(() => {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop())
+    }
+    if (ocrWorker) {
+        ocrWorker.terminate()
+        ocrWorker = null
+    }
+})
+</script>

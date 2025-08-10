@@ -205,33 +205,18 @@
                     <div class="h-1 bg-gradient-to-r from-azul-claro-viaje to-azul-tiquet rounded-full"></div>
                 </div>
                 
-                <!-- Botón de añadir gasto como tarjeta -->
+                <!-- Botón de gasto como tarjeta -->
                 <div class="bg-gradient-to-br from-lima-compartida/20 to-lima-compartida/10 rounded-2xl shadow-lg border-2 border-dashed border-lima-compartida/40 hover:border-lima-compartida hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <button 
-                        @click="showAddExpenseModal = true"
+                        @click="showSplitExpenseModal = true"
                         :disabled="expenseStore.isLoading || !currentUser"
                         class="w-full h-full p-6 text-center disabled:opacity-50 disabled:cursor-not-allowed group"
                     >
                         <div class="w-12 h-12 bg-lima-compartida/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-lima-compartida/30 transition-colors">
-                            <span class="text-2xl group-hover:scale-110 transition-transform">➕</span>
+                            <span class="text-2xl group-hover:scale-110 transition-transform">💰</span>
                         </div>
-                        <p class="text-sm font-semibold text-gris-billetera">Añadir gasto</p>
+                        <p class="text-sm font-semibold text-gris-billetera">Gasto</p>
                         <p class="text-xs text-gray-600 mt-1">Registrar nuevo gasto</p>
-                    </button>
-                </div>
-
-                <!-- Botón de gasto compartido -->
-                <div class="bg-gradient-to-br from-azul-claro-viaje/20 to-azul-tiquet/10 rounded-2xl shadow-lg border-2 border-dashed border-azul-claro-viaje/40 hover:border-azul-tiquet hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <button 
-                        @click="showSplitExpenseModal = true"
-                        :disabled="expenseStore.isLoading || !currentUser || users.length < 2"
-                        class="w-full h-full p-6 text-center disabled:opacity-50 disabled:cursor-not-allowed group"
-                    >
-                        <div class="w-12 h-12 bg-azul-claro-viaje/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-azul-claro-viaje/30 transition-colors">
-                            <span class="text-2xl group-hover:scale-110 transition-transform">🤝</span>
-                        </div>
-                        <p class="text-sm font-semibold text-gris-billetera">Gasto compartido</p>
-                        <p class="text-xs text-gray-600 mt-1">Dividir entre varios</p>
                     </button>
                 </div>
             </div>
@@ -482,10 +467,10 @@
                     <h3 class="text-lg font-semibold text-gris-billetera mb-2">Sin datos de categorías</h3>
                     <p class="text-gray-600 mb-4">No hay gastos registrados en {{ getPeriodLabel() }}</p>
                     <button 
-                        @click="showAddExpenseModal = true"
+                        @click="showSplitExpenseModal = true"
                         class="px-6 py-3 bg-lima-compartida text-gris-billetera rounded-xl font-semibold hover:bg-lima-compartida/80 transition-colors"
                     >
-                        Añadir primer gasto
+                        Crear primer gasto
                     </button>
                 </div>
 
@@ -574,12 +559,12 @@
                             'Sin gastos registrados' 
                         }}
                     </h3>
-                    <p class="text-gray-600 mb-4">Comienza registrando tu primer gasto compartido</p>
+                    <p class="text-gray-600 mb-4">Comienza registrando tu primer gasto</p>
                     <button 
-                        @click="showAddExpenseModal = true"
+                        @click="showSplitExpenseModal = true"
                         class="px-6 py-3 bg-lima-compartida text-gris-billetera rounded-xl font-semibold hover:bg-lima-compartida/80 transition-all duration-200 transform hover:-translate-y-0.5"
                     >
-                        {{ selectedDinero ? 'Añadir el primer gasto' : 'Crear tu primer gasto' }}
+                        {{ selectedDinero ? 'Crear el primer gasto' : 'Crear tu primer gasto' }}
                     </button>
                 </div>
                 
@@ -858,14 +843,7 @@
                 </div>
             </div>
 
-            <!-- Modal para añadir gasto -->
-            <AddExpenseModal 
-                v-if="showAddExpenseModal"
-                @close="showAddExpenseModal = false"
-                @expense-added="onExpenseAdded"
-            />
-
-            <!-- Modal para gasto compartido -->
+            <!-- Modal para gasto -->
             <SplitExpenseModal 
                 v-if="showSplitExpenseModal"
                 :selected-dinero="selectedDinero"
@@ -891,6 +869,7 @@ import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useBudgetStore } from '~/stores/budget.store'
+import formatearTotal from '~/utils/formatMoney'
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -901,7 +880,6 @@ const dineroStore = useDineroStore()
 const budgetStore = useBudgetStore()
 
 // Reactive data
-const showAddExpenseModal = ref(false)
 const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
 const selectedPeriod = ref('month') // week, month, year, all
@@ -1378,7 +1356,6 @@ const getCategoryIcon = (category) => {
 }
 
 const onExpenseAdded = async () => {
-    showAddExpenseModal.value = false
     showSplitExpenseModal.value = false
     alertStore.success('Gasto añadido correctamente')
     
@@ -1835,7 +1812,7 @@ const generateReport = () => {
 const handleAlertAction = (alert) => {
     switch (alert.action) {
         case 'Añadir gasto':
-            showAddExpenseModal.value = true
+            showSplitExpenseModal.value = true
             break
         case 'Ver presupuestos':
             showBudgetModal.value = true

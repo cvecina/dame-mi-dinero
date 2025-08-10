@@ -40,20 +40,12 @@
                                 <p class="text-xl font-bold">{{ filteredExpenses.length }}</p>
                             </div>
                             <button 
-                                @click="showAddExpenseModal = true"
+                                @click="showSplitExpenseModal = true"
                                 :disabled="expenseStore.isLoading || !currentUser"
                                 class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none"
                             >
-                                <span class="text-sm">+</span>
-                                Nuevo gasto
-                            </button>
-                            <button 
-                                @click="showSplitExpenseModal = true"
-                                :disabled="expenseStore.isLoading || !currentUser || users.length < 2"
-                                class="px-4 py-3 bg-gradient-to-r from-azul-claro-viaje to-azul-tiquet text-blanco-dividido text-sm font-semibold rounded-xl hover:from-azul-claro-viaje/90 hover:to-azul-tiquet/90 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none"
-                            >
-                                <span class="text-sm">🤝</span>
-                                Gasto compartido
+                                <span class="text-sm">💰</span>
+                                Gasto
                             </button>
                         </div>
                     </div>
@@ -245,14 +237,7 @@
             </div>
         </div>
 
-            <!-- Modal para añadir gasto -->
-            <AddExpenseModal 
-                v-if="showAddExpenseModal"
-                @close="showAddExpenseModal = false"
-                @expense-added="onExpenseAdded"
-            />
-
-            <!-- Modal para gasto compartido -->
+            <!-- Modal para gasto -->
             <SplitExpenseModal 
                 v-if="showSplitExpenseModal"
                 :selected-dinero="selectedDinero"
@@ -280,7 +265,6 @@ const contextStore = useContextStore()
 const dineroStore = useDineroStore()
 
 // Reactive data
-const showAddExpenseModal = ref(false)
 const showSplitExpenseModal = ref(false)
 const filters = ref({
     category: '',
@@ -409,7 +393,6 @@ const getUserAmountInExpense = (expense, userId) => {
 }
 
 const onExpenseAdded = async () => {
-    showAddExpenseModal.value = false
     showSplitExpenseModal.value = false
     alertStore.success('Gasto añadido correctamente')
     

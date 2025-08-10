@@ -34,6 +34,14 @@
                     <h3 class="font-semibold text-gris-billetera mb-4 flex items-center gap-2">
                         <span class="text-azul-tiquet">📋</span>
                         Información del gasto
+                        <button
+                            type="button"
+                            @click="showCalculator = !showCalculator"
+                            class="ml-auto px-3 py-1 text-xs bg-lima-compartida text-gris-billetera rounded-lg hover:bg-lima-compartida/90 transition-all duration-200 flex items-center gap-1"
+                        >
+                            <span>🧮</span>
+                            {{ showCalculator ? 'Ocultar' : 'Mostrar' }} calculadora
+                        </button>
                     </h3>
                     
                     <!-- Título -->
@@ -68,6 +76,62 @@
                                 @input="calculateSplits"
                             >
                         </div>
+                    </div>
+
+                    <!-- Calculadora -->
+                    <div v-if="showCalculator" class="mb-4 p-4 bg-blanco-dividido border border-azul-claro-viaje/30 rounded-lg">
+                        <h4 class="text-sm font-medium text-gris-billetera mb-3 flex items-center gap-2">
+                            <span>🧮</span>
+                            Calculadora
+                        </h4>
+                        
+                        <!-- Display de la calculadora -->
+                        <div class="mb-3">
+                            <div class="w-full p-3 bg-gris-billetera text-blanco-dividido text-right text-lg font-mono rounded-lg border">
+                                {{ calculatorDisplay }}
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de la calculadora -->
+                        <div class="grid grid-cols-4 gap-2">
+                            <!-- Primera fila -->
+                            <button type="button" @click="clearCalculator" class="p-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors">C</button>
+                            <button type="button" @click="appendToCalculator('/')" class="p-3 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded-lg font-semibold transition-colors">÷</button>
+                            <button type="button" @click="appendToCalculator('*')" class="p-3 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded-lg font-semibold transition-colors">×</button>
+                            <button type="button" @click="deleteLast" class="p-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold transition-colors">⌫</button>
+                            
+                            <!-- Segunda fila -->
+                            <button type="button" @click="appendToCalculator('7')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">7</button>
+                            <button type="button" @click="appendToCalculator('8')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">8</button>
+                            <button type="button" @click="appendToCalculator('9')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">9</button>
+                            <button type="button" @click="appendToCalculator('-')" class="p-3 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded-lg font-semibold transition-colors">−</button>
+                            
+                            <!-- Tercera fila -->
+                            <button type="button" @click="appendToCalculator('4')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">4</button>
+                            <button type="button" @click="appendToCalculator('5')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">5</button>
+                            <button type="button" @click="appendToCalculator('6')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">6</button>
+                            <button type="button" @click="appendToCalculator('+')" class="p-3 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded-lg font-semibold transition-colors">+</button>
+                            
+                            <!-- Cuarta fila -->
+                            <button type="button" @click="appendToCalculator('1')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">1</button>
+                            <button type="button" @click="appendToCalculator('2')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">2</button>
+                            <button type="button" @click="appendToCalculator('3')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">3</button>
+                            <button type="button" @click="calculate" class="row-span-2 p-3 bg-lima-compartida hover:bg-lima-compartida/90 text-gris-billetera rounded-lg font-semibold transition-colors">=</button>
+                            
+                            <!-- Quinta fila -->
+                            <button type="button" @click="appendToCalculator('0')" class="col-span-2 p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">0</button>
+                            <button type="button" @click="appendToCalculator('.')" class="p-3 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded-lg font-semibold transition-colors border border-azul-claro-viaje/30">.</button>
+                        </div>
+                        
+                        <!-- Botón para usar resultado -->
+                        <button
+                            v-if="calculatorDisplay !== '0' && !isNaN(parseFloat(calculatorDisplay))"
+                            type="button"
+                            @click="useCalculatorResult"
+                            class="w-full mt-3 p-2 bg-azul-claro-viaje hover:bg-azul-tiquet text-white rounded-lg text-sm font-semibold transition-colors"
+                        >
+                            Usar resultado ({{ calculatorDisplay }}€)
+                        </button>
                     </div>
 
                     <!-- Categoría -->
@@ -189,8 +253,72 @@
                                                 class="w-20 pl-6 pr-2 py-1 text-xs border border-azul-claro-viaje/30 rounded-lg focus:ring-2 focus:ring-lima-compartida focus:border-lima-compartida bg-blanco-dividido transition-all duration-200"
                                             >
                                         </div>
+                                        <button
+                                            type="button"
+                                            @click="togglePersonalCalculator(user.id)"
+                                            class="p-1 text-xs bg-lima-compartida hover:bg-lima-compartida/90 text-gris-billetera rounded transition-colors"
+                                            :title="`${showPersonalCalculator[user.id] ? 'Ocultar' : 'Mostrar'} calculadora para ${user.name}`"
+                                        >
+                                            🧮
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <!-- Calculadora personal -->
+                            <div v-if="showPersonalCalculator[user.id] && formData.participants.includes(user.id) && splitMode === 'custom'" class="ml-7 mt-2 p-3 bg-blanco-dividido border border-azul-claro-viaje/30 rounded-lg">
+                                <h5 class="text-xs font-medium text-gris-billetera mb-2 flex items-center gap-1">
+                                    <span>🧮</span>
+                                    Calculadora para {{ user.name }}
+                                </h5>
+                                
+                                <!-- Display de la calculadora personal -->
+                                <div class="mb-2">
+                                    <div class="w-full p-2 bg-gris-billetera text-blanco-dividido text-right text-sm font-mono rounded border">
+                                        {{ getPersonalCalculatorDisplay(user.id) }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Botones de la calculadora personal (versión compacta) -->
+                                <div class="grid grid-cols-4 gap-1">
+                                    <!-- Primera fila -->
+                                    <button type="button" @click="clearPersonalCalculator(user.id)" class="p-2 bg-red-500 hover:bg-red-600 text-white rounded text-xs font-semibold transition-colors">C</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '/')" class="p-2 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded text-xs font-semibold transition-colors">÷</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '*')" class="p-2 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded text-xs font-semibold transition-colors">×</button>
+                                    <button type="button" @click="deleteLastPersonal(user.id)" class="p-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-xs font-semibold transition-colors">⌫</button>
+                                    
+                                    <!-- Segunda fila -->
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '7')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">7</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '8')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">8</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '9')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">9</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '-')" class="p-2 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded text-xs font-semibold transition-colors">−</button>
+                                    
+                                    <!-- Tercera fila -->
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '4')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">4</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '5')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">5</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '6')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">6</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '+')" class="p-2 bg-azul-tiquet hover:bg-azul-tiquet/90 text-white rounded text-xs font-semibold transition-colors">+</button>
+                                    
+                                    <!-- Cuarta fila -->
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '1')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">1</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '2')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">2</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '3')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">3</button>
+                                    <button type="button" @click="calculatePersonal(user.id)" class="row-span-2 p-2 bg-lima-compartida hover:bg-lima-compartida/90 text-gris-billetera rounded text-xs font-semibold transition-colors">=</button>
+                                    
+                                    <!-- Quinta fila -->
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '0')" class="col-span-2 p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">0</button>
+                                    <button type="button" @click="appendToPersonalCalculator(user.id, '.')" class="p-2 bg-marfil-mapamundi hover:bg-azul-claro-viaje/20 text-gris-billetera rounded text-xs font-semibold transition-colors border border-azul-claro-viaje/30">.</button>
+                                </div>
+                                
+                                <!-- Botón para usar resultado personal -->
+                                <button
+                                    v-if="getPersonalCalculatorDisplay(user.id) !== '0' && !isNaN(parseFloat(getPersonalCalculatorDisplay(user.id)))"
+                                    type="button"
+                                    @click="usePersonalCalculatorResult(user.id)"
+                                    class="w-full mt-2 p-2 bg-azul-claro-viaje hover:bg-azul-tiquet text-white rounded text-xs font-semibold transition-colors"
+                                >
+                                    Usar resultado ({{ getPersonalCalculatorDisplay(user.id) }}€)
+                                </button>
                             </div>
                             
                             <!-- Descripción del modo -->
@@ -316,6 +444,10 @@ const alertStore = useAlertStore()
 
 // State
 const loading = ref(false)
+const showCalculator = ref(false)
+const calculatorDisplay = ref('0')
+const showPersonalCalculator = ref({}) // { userId: boolean }
+const personalCalculatorDisplays = ref({}) // { userId: string }
 const splitMode = ref('equal') // 'equal' o 'custom'
 const customAmounts = ref({}) // { userId: amount }
 const formData = ref({
@@ -491,6 +623,126 @@ const submitSplitExpense = async () => {
     } finally {
         loading.value = false
     }
+}
+
+// Calculator functions
+const appendToCalculator = (value) => {
+    if (calculatorDisplay.value === '0') {
+        calculatorDisplay.value = value
+    } else {
+        calculatorDisplay.value += value
+    }
+    console.log('appendToCalculator')
+}
+
+const clearCalculator = () => {
+    calculatorDisplay.value = '0'
+    console.log('clearCalculator')
+}
+
+const deleteLast = () => {
+    if (calculatorDisplay.value.length > 1) {
+        calculatorDisplay.value = calculatorDisplay.value.slice(0, -1)
+    } else {
+        calculatorDisplay.value = '0'
+    }
+    console.log('deleteLast')
+}
+
+const calculate = () => {
+    try {
+        // Evaluate safely using Function constructor instead of eval
+        const result = Function('"use strict"; return (' + calculatorDisplay.value + ')')()
+        calculatorDisplay.value = result.toString()
+    } catch (error) {
+        calculatorDisplay.value = 'Error'
+        setTimeout(() => {
+            calculatorDisplay.value = '0'
+        }, 1000)
+    }
+    console.log('calculate')
+}
+
+const useCalculatorResult = () => {
+    const result = parseFloat(calculatorDisplay.value)
+    if (!isNaN(result)) {
+        formData.value.amount = result.toFixed(2)
+        calculateSplits()
+        showCalculator.value = false
+        calculatorDisplay.value = '0'
+    }
+    console.log('useCalculatorResult')
+}
+
+// Personal calculator functions
+const togglePersonalCalculator = (userId) => {
+    showPersonalCalculator.value[userId] = !showPersonalCalculator.value[userId]
+    if (!personalCalculatorDisplays.value[userId]) {
+        personalCalculatorDisplays.value[userId] = '0'
+    }
+    console.log('togglePersonalCalculator')
+}
+
+const getPersonalCalculatorDisplay = (userId) => {
+    return personalCalculatorDisplays.value[userId] || '0'
+}
+
+const appendToPersonalCalculator = (userId, value) => {
+    if (!personalCalculatorDisplays.value[userId]) {
+        personalCalculatorDisplays.value[userId] = '0'
+    }
+    if (personalCalculatorDisplays.value[userId] === '0') {
+        personalCalculatorDisplays.value[userId] = value
+    } else {
+        personalCalculatorDisplays.value[userId] += value
+    }
+    console.log('appendToPersonalCalculator')
+}
+
+const clearPersonalCalculator = (userId) => {
+    personalCalculatorDisplays.value[userId] = '0'
+    console.log('clearPersonalCalculator')
+}
+
+const deleteLastPersonal = (userId) => {
+    if (!personalCalculatorDisplays.value[userId]) {
+        personalCalculatorDisplays.value[userId] = '0'
+        return
+    }
+    if (personalCalculatorDisplays.value[userId].length > 1) {
+        personalCalculatorDisplays.value[userId] = personalCalculatorDisplays.value[userId].slice(0, -1)
+    } else {
+        personalCalculatorDisplays.value[userId] = '0'
+    }
+    console.log('deleteLastPersonal')
+}
+
+const calculatePersonal = (userId) => {
+    if (!personalCalculatorDisplays.value[userId]) {
+        personalCalculatorDisplays.value[userId] = '0'
+        return
+    }
+    try {
+        // Evaluate safely using Function constructor instead of eval
+        const result = Function('"use strict"; return (' + personalCalculatorDisplays.value[userId] + ')')()
+        personalCalculatorDisplays.value[userId] = result.toString()
+    } catch (error) {
+        personalCalculatorDisplays.value[userId] = 'Error'
+        setTimeout(() => {
+            personalCalculatorDisplays.value[userId] = '0'
+        }, 1000)
+    }
+    console.log('calculatePersonal')
+}
+
+const usePersonalCalculatorResult = (userId) => {
+    const result = parseFloat(personalCalculatorDisplays.value[userId])
+    if (!isNaN(result)) {
+        customAmounts.value[userId] = result.toFixed(2)
+        showPersonalCalculator.value[userId] = false
+        personalCalculatorDisplays.value[userId] = '0'
+    }
+    console.log('usePersonalCalculatorResult')
 }
 
 // Watchers

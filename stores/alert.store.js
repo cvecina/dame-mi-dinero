@@ -29,6 +29,20 @@ export const useAlertStore = defineStore({
             setTimeout(() => {
                 this.clear();
             }, tiempo);
+        },
+
+        info(message, tiempo = 2000) {
+            this.alert = { message, type: "info" };
+            setTimeout(() => {
+                this.clear();
+            }, tiempo);
+        },
+
+        warning(message, tiempo = 2000) {
+            this.alert = { message, type: "warn" };
+            setTimeout(() => {
+                this.clear();
+            }, tiempo);
         }
 
         // activarToast(options: MessageOptions = {}): () => void {
