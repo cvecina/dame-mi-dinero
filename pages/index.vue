@@ -1548,7 +1548,7 @@ const generateReport = () => {
                 page-break-inside: avoid;
             }
             .stat-card { 
-                background: linear-gradient(135deg, #F6F5F2 0%, #E8F4FD 100%); 
+                background: linear-gradient(135deg, #F6F5F2 0%, #FFFFFF 100%); 
                 padding: 20px; 
                 border-radius: 12px; 
                 border-left: 6px solid #A8E000;
@@ -1597,7 +1597,7 @@ const generateReport = () => {
                 font-size: 11px;
             }
             th { 
-                background: linear-gradient(135deg, #3A7CA5 0%, #5B9BD5 100%); 
+                background: linear-gradient(135deg, #3A7CA5 0%, #3C3C3C 100%); 
                 color: white; 
                 font-weight: 600;
                 text-transform: uppercase;
@@ -1605,17 +1605,17 @@ const generateReport = () => {
                 font-size: 10px;
             }
             tr:nth-child(even) {
-                background-color: #F8F9FA;
+                background-color: #F6F5F2;
             }
             tr:hover {
-                background-color: #E8F4FD;
+                background-color: #FFFFFF;
             }
             .amount {
                 font-weight: 600;
                 color: #3A7CA5;
             }
             .percentage {
-                background: linear-gradient(135deg, #A8E000 0%, #7CB342 100%);
+                background: linear-gradient(135deg, #A8E000 0%, #A9D6E5 100%);
                 color: white;
                 padding: 2px 8px;
                 border-radius: 12px;

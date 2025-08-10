@@ -18,86 +18,113 @@
         </div>
 
         <!-- Main content -->
-        <div v-else>
+        <div v-else class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">
-                        Gastos{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
-                    </h1>
-                    <p class="text-sm sm:text-base text-gray-600">
-                        {{ selectedDinero ? 
-                            `Gastos del dinero: ${selectedDinero.name}` : 
-                            'Historial completo de gastos compartidos' 
-                        }}
-                    </p>
-                </div>
-                <button 
-                    @click="showAddExpenseModal = true"
-                    :disabled="expenseStore.isLoading || !currentUser"
-                    class="w-full sm:w-auto bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start gap-2 disabled:opacity-50"
-                >
-                    <span class="text-xl">+</span>
-                    Nuevo gasto
-                </button>
-            </div>
-
-        <!-- Filtros -->
-        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
-            <h2 class="text-base sm:text-lg font-semibold text-gris-billetera mb-4">Filtros</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Filtro por categoría -->
-                <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">Categoría</label>
-                    <select
-                        v-model="filters.category"
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
-                    >
-                        <option value="">Todas las categorías</option>
-                        <option value="Comida">Comida</option>
-                        <option value="Transporte">Transporte</option>
-                        <option value="Alojamiento">Alojamiento</option>
-                        <option value="Entretenimiento">Entretenimiento</option>
-                        <option value="Compras">Compras</option>
-                        <option value="Otros">Otros</option>
-                    </select>
-                </div>
-
-                <!-- Filtro por usuario -->
-                <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">Usuario</label>
-                    <select
-                        v-model="filters.user"
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
-                    >
-                        <option value="">Todos los usuarios</option>
-                        <option v-for="user in users" :key="user.id" :value="user.id">
-                            {{ user.name }}
-                        </option>
-                    </select>
-                </div>
-
-                <!-- Ordenar por -->
-                <div class="sm:col-span-2 lg:col-span-1">
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">Ordenar por</label>
-                    <select
-                        v-model="filters.sortBy"
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
-                    >
-                        <option value="date-desc">Fecha (más reciente)</option>
-                        <option value="date-asc">Fecha (más antiguo)</option>
-                        <option value="amount-desc">Cantidad (mayor)</option>
-                        <option value="amount-asc">Cantidad (menor)</option>
-                    </select>
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-2xl p-6 text-blanco-dividido shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold mb-2">
+                                Gastos{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
+                            </h1>
+                            <p class="text-azul-claro-viaje/90 text-sm sm:text-base">
+                                {{ selectedDinero ? 
+                                    `Gastos del dinero: ${selectedDinero.name}` : 
+                                    'Historial completo de gastos compartidos' 
+                                }}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Total gastos</p>
+                                <p class="text-xl font-bold">{{ filteredExpenses.length }}</p>
+                            </div>
+                            <button 
+                                @click="showAddExpenseModal = true"
+                                :disabled="expenseStore.isLoading || !currentUser"
+                                class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none"
+                            >
+                                <span class="text-sm">+</span>
+                                Nuevo gasto
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Lista de gastos -->
-        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
-                <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">
-                    {{ filteredExpenses.length }} gasto{{ filteredExpenses.length !== 1 ? 's' : '' }}
+            <!-- Panel de filtros -->
+            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 bg-azul-tiquet/10 rounded-lg flex items-center justify-center">
+                        <span class="text-azul-tiquet">🔍</span>
+                    </div>
+                    <h2 class="text-lg font-semibold text-gris-billetera">Filtros de búsqueda</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Filtro por categoría -->
+                    <div>
+                        <label class="block text-sm font-medium text-gris-billetera mb-2">Categoría</label>
+                        <select
+                            v-model="filters.category"
+                            class="w-full px-3 py-2 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje"
+                        >
+                            <option value="">Todas las categorías</option>
+                            <option value="Comida">🍕 Comida</option>
+                            <option value="Transporte">🚗 Transporte</option>
+                            <option value="Alojamiento">🏠 Alojamiento</option>
+                            <option value="Entretenimiento">🎉 Entretenimiento</option>
+                            <option value="Compras">🛍️ Compras</option>
+                            <option value="Otros">📦 Otros</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro por usuario -->
+                    <div>
+                        <label class="block text-sm font-medium text-gris-billetera mb-2">Usuario</label>
+                        <select
+                            v-model="filters.user"
+                            class="w-full px-3 py-2 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje"
+                        >
+                            <option value="">Todos los usuarios</option>
+                            <option v-for="user in users" :key="user.id" :value="user.id">
+                                👤 {{ user.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Ordenar por -->
+                    <div>
+                        <label class="block text-sm font-medium text-gris-billetera mb-2">Ordenar por</label>
+                        <select
+                            v-model="filters.sortBy"
+                            class="w-full px-3 py-2 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje"
+                        >
+                            <option value="date-desc">📅 Fecha (más reciente)</option>
+                            <option value="date-asc">📅 Fecha (más antiguo)</option>
+                            <option value="amount-desc">💰 Cantidad (mayor)</option>
+                            <option value="amount-asc">💰 Cantidad (menor)</option>
+                        </select>
+                    </div>
+
+                    <!-- Resumen de filtros -->
+                    <div class="flex items-end">
+                        <div class="bg-azul-claro-viaje/10 px-4 py-3 rounded-xl border border-azul-claro-viaje/30 w-full">
+                            <p class="text-xs text-gris-billetera font-medium">Mostrando</p>
+                            <p class="text-sm font-bold text-azul-tiquet">{{ filteredExpenses.length }} gastos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de gastos -->
+            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 border border-azul-claro-viaje/20">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 bg-azul-tiquet/10 rounded-lg flex items-center justify-center">
+                        <span class="text-azul-tiquet">📊</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gris-billetera">
+                        {{ filteredExpenses.length }} gasto{{ filteredExpenses.length !== 1 ? 's' : '' }}
                     {{ selectedDinero ? `en ${selectedDinero.name}` : '' }}
                 </h2>
                 <div class="text-sm text-gray-600">

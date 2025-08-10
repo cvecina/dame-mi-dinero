@@ -9,95 +9,121 @@
         </div>
 
         <!-- Main content - La página de usuarios siempre se muestra -->
-        <div v-else>
+        <div v-else class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Gestión de usuarios</h1>
-                    <p class="text-sm sm:text-base text-gray-600">Administra los usuarios del grupo</p>
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-2xl p-6 text-blanco-dividido shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold mb-2">Gestión de usuarios</h1>
+                            <p class="text-azul-claro-viaje/90 text-sm sm:text-base">
+                                Administra los usuarios del grupo y sus permisos
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Total usuarios</p>
+                                <p class="text-xl font-bold">{{ users.length }}</p>
+                            </div>
+                            <button 
+                                @click="showAddUserModal = true"
+                                :disabled="userStore.isLoading"
+                                class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:opacity-50 disabled:transform-none"
+                            >
+                                <span class="text-sm">+</span>
+                                Añadir usuario
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <button 
-                    @click="showAddUserModal = true"
-                    :disabled="userStore.isLoading"
-                    class="w-full sm:w-auto bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center sm:justify-start gap-2 disabled:opacity-50"
-                >
-                    <span class="text-xl">+</span>
-                    Añadir usuario
-                </button>
             </div>
 
-        <!-- Lista de usuarios -->
-        <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
-            <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera mb-6">
-                {{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} en el grupo
-            </h2>
+            <!-- Lista de usuarios -->
+            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 border border-azul-claro-viaje/20">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 bg-azul-tiquet/10 rounded-lg flex items-center justify-center">
+                        <span class="text-azul-tiquet">👥</span>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gris-billetera">
+                        {{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} en el grupo
+                    </h2>
+                </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div 
-                    v-for="user in users" 
-                    :key="user.id"
-                    class="border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow duration-200"
-                >
-                    <!-- Avatar y nombre -->
-                    <div class="flex items-center gap-3 sm:gap-4 mb-4">
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-lg sm:text-xl font-bold">
-                            {{ user.name.charAt(0).toUpperCase() }}
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div 
+                        v-for="user in users" 
+                        :key="user.id"
+                        class="border-2 border-azul-claro-viaje/20 rounded-2xl p-6 hover:shadow-lg hover:border-azul-claro-viaje/40 transition-all duration-300 transform hover:-translate-y-1"
+                        :class="{ 'ring-2 ring-lima-compartida/50 border-lima-compartida/40': user.id === currentUser.id }"
+                    >
+                        <!-- Avatar y nombre -->
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-br from-azul-tiquet to-azul-claro-viaje rounded-full flex items-center justify-center text-blanco-dividido text-xl font-bold shadow-lg">
+                                {{ user.name.charAt(0).toUpperCase() }}
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gris-billetera">{{ user.name }}</h3>
+                                <span 
+                                    v-if="user.id === currentUser.id" 
+                                    class="inline-block mt-1 px-3 py-1 text-xs font-bold bg-lima-compartida text-gris-billetera rounded-full shadow-sm"
+                                >
+                                    🌟 Usuario actual
+                                </span>
+                                <span v-else class="text-sm text-gray-600">Miembro del grupo</span>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-base sm:text-lg font-semibold text-gris-billetera">{{ user.name }}</h3>
-                            <span 
-                                v-if="user.id === currentUser.id" 
-                                class="inline-block mt-1 px-2 py-1 text-xs font-medium bg-lima-compartida/10 text-azul-tiquet rounded-full"
+
+                        <!-- Estadísticas del usuario -->
+                        <div class="space-y-4 mb-6">
+                            <div class="bg-marfil-mapamundi rounded-xl p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-600 font-medium">Balance actual</span>
+                                    <span 
+                                        class="text-lg font-bold"
+                                        :class="getUserBalance(user.id) >= 0 ? 'text-lima-compartida' : 'text-red-500'"
+                                    >
+                                        {{ formatMoney(getUserBalance(user.id)) }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-azul-claro-viaje/10 rounded-lg p-3 text-center">
+                                    <p class="text-xs text-gray-600 mb-1">Total pagado</p>
+                                    <p class="text-sm font-bold text-azul-tiquet">
+                                        {{ formatMoney(getUserTotalPaid(user.id)) }}
+                                    </p>
+                                </div>
+                                
+                                <div class="bg-lima-compartida/10 rounded-lg p-3 text-center">
+                                    <p class="text-xs text-gray-600 mb-1">Gastos</p>
+                                    <p class="text-sm font-bold text-lima-compartida">
+                                        {{ getUserExpenseCount(user.id) }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="flex gap-2">
+                            <button 
+                                @click="setAsCurrentUser(user)"
+                                :disabled="user.id === currentUser.id"
+                                class="flex-1 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200"
+                                :class="user.id === currentUser.id 
+                                    ? 'bg-lima-compartida/20 text-lima-compartida cursor-not-allowed' 
+                                    : 'bg-azul-claro-viaje/10 text-azul-tiquet hover:bg-azul-claro-viaje/20 hover:shadow-sm transform hover:-translate-y-0.5'"
                             >
-                                Tú
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Estadísticas del usuario -->
-                    <div class="space-y-3 mb-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Balance actual</span>
-                            <span 
-                                class="font-semibold"
-                                :class="getUserBalance(user.id) >= 0 ? 'text-lima-compartida' : 'text-red-500'"
+                                {{ user.id === currentUser.id ? '✓ Usuario actual' : '🔄 Cambiar usuario' }}
+                            </button>
+                            <button 
+                                v-if="user.id !== currentUser.id"
+                                @click="deleteUser(user.id)"
+                                class="px-3 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 hover:shadow-sm transform hover:-translate-y-0.5"
                             >
-                                {{ formatMoney(getUserBalance(user.id)) }}
-                            </span>
+                                🗑️
+                            </button>
                         </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Total pagado</span>
-                            <span class="font-semibold text-gris-billetera">
-                                {{ formatMoney(getUserTotalPaid(user.id)) }}
-                            </span>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Gastos participados</span>
-                            <span class="font-semibold text-azul-claro-viaje">
-                                {{ getUserExpenseCount(user.id) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Acciones -->
-                    <div class="flex gap-2">
-                        <button 
-                            @click="setAsCurrentUser(user)"
-                            :disabled="user.id === currentUser.id"
-                            class="flex-1 px-3 py-2 text-sm bg-azul-claro-viaje/10 text-azul-tiquet rounded-lg hover:bg-azul-claro-viaje/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {{ user.id === currentUser.id ? 'Usuario actual' : 'Cambiar a este usuario' }}
-                        </button>
-                        <button 
-                            v-if="user.id !== currentUser.id"
-                            @click="deleteUser(user.id)"
-                            class="px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                        >
-                            Eliminar
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

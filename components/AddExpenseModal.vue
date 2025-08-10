@@ -1,48 +1,57 @@
 <template>
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-        <div class="bg-blanco-dividido rounded-lg shadow-xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+        <div class="bg-blanco-dividido rounded-2xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto border border-azul-claro-viaje/20">
             <!-- Header -->
-            <div class="flex items-center justify-between p-4 sm:p-6 border-b">
+            <div class="flex items-center justify-between p-6 border-b border-azul-claro-viaje/20 bg-gradient-to-r from-azul-tiquet/5 to-azul-claro-viaje/5">
                 <div>
-                    <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Añadir nuevo gasto</h2>
-                    <div v-if="selectedDinero" class="flex items-center gap-2 mt-1">
+                    <h2 class="text-xl font-bold text-gris-billetera flex items-center gap-2">
+                        <span class="text-azul-tiquet">💰</span>
+                        Añadir nuevo gasto
+                    </h2>
+                    <div v-if="selectedDinero" class="flex items-center gap-2 mt-2">
                         <div 
-                            class="w-3 h-3 rounded-full" 
+                            class="w-3 h-3 rounded-full shadow-sm" 
                             :style="{ backgroundColor: selectedDinero.color }"
                         ></div>
-                        <span class="text-xs text-gray-600">Se añadirá a: {{ selectedDinero.name }}</span>
+                        <span class="text-xs text-gray-600 font-medium">Se añadirá a: {{ selectedDinero.name }}</span>
                     </div>
                 </div>
                 <button 
                     @click="$emit('close')"
-                    class="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                    class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 p-2"
                 >
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <!-- Form -->
-            <form @submit.prevent="submitExpense" class="p-4 sm:p-6 space-y-4">
+            <form @submit.prevent="submitExpense" class="p-6 space-y-6">
                 <!-- Título -->
                 <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">
-                        Título del gasto
+                    <label class="block text-sm font-semibold text-gris-billetera mb-3">
+                        <span class="flex items-center gap-2">
+                            <span class="text-azul-tiquet">📝</span>
+                            Título del gasto
+                        </span>
                     </label>
                     <input
                         v-model="formData.title"
                         type="text"
                         required
                         placeholder="Ej: Cena en el restaurante"
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
+                        class="w-full px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje placeholder-gray-400"
                     >
                 </div>
 
                 <!-- Cantidad -->
                 <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">
-                        Cantidad (€)
+                    <label class="block text-sm font-semibold text-gris-billetera mb-3">
+                        <span class="flex items-center gap-2">
+                            <span class="text-lima-compartida">💳</span>
+                            Cantidad (€)
+                        </span>
                     </label>
                     <input
                         v-model.number="formData.amount"
@@ -51,40 +60,46 @@
                         min="0"
                         required
                         placeholder="0.00"
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
+                        class="w-full px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje placeholder-gray-400"
                     >
                 </div>
 
                 <!-- Categoría -->
                 <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">
-                        Categoría
+                    <label class="block text-sm font-semibold text-gris-billetera mb-3">
+                        <span class="flex items-center gap-2">
+                            <span class="text-azul-claro-viaje">📂</span>
+                            Categoría
+                        </span>
                     </label>
                     <select
                         v-model="formData.category"
                         required
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
+                        class="w-full px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje"
                     >
                         <option value="">Selecciona una categoría</option>
-                        <option value="Comida">Comida</option>
-                        <option value="Transporte">Transporte</option>
-                        <option value="Alojamiento">Alojamiento</option>
-                        <option value="Entretenimiento">Entretenimiento</option>
-                        <option value="Compras">Compras</option>
-                        <option value="Otros">Otros</option>
+                        <option value="Comida">🍕 Comida</option>
+                        <option value="Transporte">🚗 Transporte</option>
+                        <option value="Alojamiento">🏠 Alojamiento</option>
+                        <option value="Entretenimiento">🎉 Entretenimiento</option>
+                        <option value="Compras">🛍️ Compras</option>
+                        <option value="Otros">📦 Otros</option>
                     </select>
                 </div>
 
                 <!-- Descripción -->
                 <div>
-                    <label class="block text-sm font-medium text-gris-billetera mb-2">
-                        Descripción (opcional)
+                    <label class="block text-sm font-semibold text-gris-billetera mb-3">
+                        <span class="flex items-center gap-2">
+                            <span class="text-gray-500">📄</span>
+                            Descripción (opcional)
+                        </span>
                     </label>
                     <textarea
                         v-model="formData.description"
                         rows="3"
                         placeholder="Descripción del gasto..."
-                        class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent resize-none"
+                        class="w-full px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje resize-none placeholder-gray-400"
                     ></textarea>
                 </div>
 

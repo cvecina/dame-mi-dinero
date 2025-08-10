@@ -161,7 +161,7 @@ const editingDinero = ref(null)
 const form = ref({
     name: '',
     description: '',
-    color: '#3A7CA5'
+    color: '#3DA9FC'
 })
 
 // Available colors
@@ -170,9 +170,9 @@ const availableColors = [
     { name: 'Lima Compartida', value: '#A8E000' },
     { name: 'Azul Claro Viaje', value: '#A9D6E5' },
     { name: 'Gris Billetera', value: '#3C3C3C' },
+    { name: 'Marfil Mapamundi', value: '#F6F5F2' },
     { name: 'Verde', value: '#10B981' },
     { name: 'Morado', value: '#8B5CF6' },
-    { name: 'Rosa', value: '#EC4899' },
     { name: 'Naranja', value: '#F59E0B' },
     { name: 'Rojo', value: '#EF4444' },
     { name: 'Índigo', value: '#6366F1' }

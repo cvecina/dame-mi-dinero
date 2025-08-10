@@ -9,50 +9,126 @@
         </div>
 
         <!-- Main content -->
-        <div v-else>
+        <div v-else class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="mb-6 sm:mb-8">
-                <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera mb-2">Dineros</h1>
-                <p class="text-sm sm:text-base text-gray-600">Gestiona los contenedores de gastos</p>
-            </div>
-
-            <!-- Resumen general -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-azul-tiquet">
-                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Total Dineros</h3>
-                    <p class="text-xl sm:text-2xl font-bold text-azul-tiquet">{{ dineros.length }}</p>
-                </div>
-                
-                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-lima-compartida">
-                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Total Gastos</h3>
-                    <p class="text-xl sm:text-2xl font-bold text-lima-compartida">{{ totalExpenses }}</p>
-                </div>
-                
-                <div class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 border-l-4 border-azul-claro-viaje sm:col-span-2 lg:col-span-1">
-                    <h3 class="text-base sm:text-lg font-semibold text-gris-billetera mb-2">Dinero Activo</h3>
-                    <p class="text-xl sm:text-2xl font-bold text-azul-claro-viaje">{{ selectedDinero?.name || 'Todos' }}</p>
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-2xl p-6 text-blanco-dividido shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold mb-2">Dineros</h1>
+                            <p class="text-azul-claro-viaje/90 text-sm sm:text-base">
+                                Gestiona los contenedores de gastos compartidos
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Total contenedores</p>
+                                <p class="text-xl font-bold">{{ dineros.length }}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Botones de acción -->
-            <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                <button 
-                    @click="showDineroModal = true"
-                    class="bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center gap-2"
-                >
-                    <span class="text-xl">+</span>
-                    Crear nuevo dinero
-                </button>
+            <!-- Panel de control -->
+            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <!-- Filtros -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="relative">
+                            <label class="text-sm font-semibold text-gris-billetera mb-2 flex items-center gap-2">
+                                <span class="text-azul-tiquet">💰</span>
+                                Filtrar dineros
+                            </label>
+                            <select 
+                                v-model="selectedDineroId"
+                                class="px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje min-w-[200px]"
+                            >
+                                <option value="">Todos los dineros</option>
+                                <option v-for="dinero in dineros" :key="dinero.id" :value="dinero.id">
+                                    {{ dinero.name }}
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-end">
+                            <div class="bg-azul-claro-viaje/10 px-4 py-3 rounded-xl border border-azul-claro-viaje/30">
+                                <p class="text-xs text-gris-billetera font-medium">Dinero activo</p>
+                                <p class="text-sm font-bold text-azul-tiquet">{{ selectedDinero?.name || 'Todos' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="flex flex-wrap gap-3">
+                        <button 
+                            @click="showDineroModal = true"
+                            class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            <span class="text-sm">+</span>
+                            Crear nuevo dinero
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de estadísticas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                <!-- Total Dineros -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-tiquet/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-azul-tiquet/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">💰</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Total dineros</p>
+                            <p class="text-2xl font-bold text-azul-tiquet">{{ dineros.length }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-full"></div>
+                </div>
                 
-                <select 
-                    v-model="selectedDineroId"
-                    class="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-azul-tiquet focus:border-transparent"
-                >
-                    <option value="">Todos los dineros</option>
-                    <option v-for="dinero in dineros" :key="dinero.id" :value="dinero.id">
-                        {{ dinero.name }}
-                    </option>
-                </select>
+                <!-- Total Gastos -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-lima-compartida/10 rounded-2xl shadow-lg p-6 border border-lima-compartida/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Total gastos</p>
+                            <p class="text-2xl font-bold text-lima-compartida">{{ totalExpenses }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-lima-compartida to-green-400 rounded-full"></div>
+                </div>
+                
+                <!-- Gasto promedio -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-claro-viaje/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-azul-claro-viaje/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">📈</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Gasto promedio</p>
+                            <p class="text-2xl font-bold text-azul-claro-viaje">{{ formatMoney(totalExpenses > 0 ? getTotalAmount() / totalExpenses : 0) }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-azul-claro-viaje to-blue-400 rounded-full"></div>
+                </div>
+                
+                <!-- Dinero con más gastos -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-marfil-mapamundi rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">🏆</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Más usado</p>
+                            <p class="text-lg font-bold text-gris-billetera truncate">{{ getMostUsedDinero() }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"></div>
+                </div>
             </div>
 
             <!-- Lista de dineros con gastos -->
@@ -217,6 +293,21 @@ const getDineroExpenseCount = (dineroId) => {
 
 const getDineroTotal = (dineroId) => {
     return expenseStore.getTotalExpensesByDinero(dineroId)
+}
+
+const getTotalAmount = () => {
+    return expenseStore.getAllExpenses.reduce((total, expense) => total + expense.amount, 0)
+}
+
+const getMostUsedDinero = () => {
+    if (dineros.value.length === 0) return 'Ninguno'
+    
+    const dineroUsage = dineros.value.map(dinero => ({
+        name: dinero.name,
+        count: getDineroExpenseCount(dinero.id)
+    })).sort((a, b) => b.count - a.count)
+    
+    return dineroUsage[0]?.count > 0 ? dineroUsage[0].name : 'Ninguno'
 }
 
 const editDinero = (dinero) => {

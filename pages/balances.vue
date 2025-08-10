@@ -18,49 +18,56 @@
         </div>
 
         <!-- Main content -->
-        <div v-else>
+        <div v-else class="max-w-7xl mx-auto">
             <!-- Header -->
-            <div class="mb-6 sm:mb-8">
-                <div class="flex items-center gap-3 mb-4">
-                    <NuxtLink 
-                        to="/"
-                        class="flex items-center justify-center w-10 h-10 bg-azul-tiquet text-blanco-dividido rounded-lg hover:bg-azul-claro-viaje transition-colors"
-                    >
-                        ←
-                    </NuxtLink>
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold text-gris-billetera">
-                            Balances{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
-                        </h1>
-                        <p class="text-sm sm:text-base text-gray-600">
-                            {{ selectedDinero ? 
-                                `Gestión de balances para: ${selectedDinero.name}` : 
-                                'Gestión completa de deudas y pagos' 
-                            }}
-                        </p>
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-2xl p-6 text-blanco-dividido shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold mb-2">
+                                Balances{{ selectedDinero ? ` - ${selectedDinero.name}` : '' }}
+                            </h1>
+                            <p class="text-azul-claro-viaje/90 text-sm sm:text-base">
+                                {{ selectedDinero ? 
+                                    `Gestión de balances para: ${selectedDinero.name}` : 
+                                    'Gestión completa de deudas y pagos entre usuarios' 
+                                }}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Tu balance</p>
+                                <p class="text-xl font-bold" :class="balances[currentUser.id]?.balance >= 0 ? 'text-white' : 'text-red-200'">
+                                    {{ balances[currentUser.id] ? formatMoney(balances[currentUser.id].balance) : '€0.00' }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Sin balances -->
-            <div v-if="Object.keys(balances).length === 0" class="text-center py-20">
-                <div class="text-6xl mb-4">💰</div>
-                <h2 class="text-xl font-semibold text-gris-billetera mb-2">No hay balances</h2>
-                <p class="text-gray-600 mb-6">Aún no hay gastos registrados para calcular balances</p>
-                <NuxtLink 
-                    to="/"
-                    class="bg-lima-compartida hover:bg-azul-claro-viaje text-gris-billetera px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                    Añadir primer gasto
-                </NuxtLink>
+            <div v-if="Object.keys(balances).length === 0" class="flex items-center justify-center py-20">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">💰</div>
+                    <h2 class="text-xl font-semibold text-gris-billetera mb-2">No hay balances</h2>
+                    <p class="text-gray-600 mb-6">Aún no hay gastos registrados para calcular balances</p>
+                    <NuxtLink 
+                        to="/"
+                        class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                        <span class="text-sm">+</span>
+                        Añadir primer gasto
+                    </NuxtLink>
+                </div>
             </div>
 
             <!-- Contenido principal -->
-            <div v-else class="space-y-6 sm:space-y-8">
+            <div v-else class="space-y-8">
                 <!-- Resumen personal destacado -->
                 <div 
                     v-if="balances[currentUser.id]"
-                    class="relative overflow-hidden bg-gradient-to-br from-azul-tiquet/10 to-lima-compartida/10 rounded-xl border-2 border-azul-tiquet/20 p-6 sm:p-8"
+                    class="relative overflow-hidden bg-gradient-to-br from-azul-tiquet/10 to-lima-compartida/10 rounded-2xl border-2 border-azul-tiquet/20 p-6 sm:p-8 shadow-xl"
                 >
                     <div class="absolute top-4 right-4 bg-azul-tiquet text-blanco-dividido px-3 py-1 rounded-full text-xs font-bold">
                         TU RESUMEN
@@ -81,15 +88,15 @@
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                        <div class="bg-blanco-dividido/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-md">
                             <p class="text-sm text-gray-600 mb-2">Total pagado</p>
                             <p class="text-xl font-bold text-azul-tiquet">{{ formatMoney(balances[currentUser.id].totalSpent) }}</p>
                         </div>
-                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                        <div class="bg-blanco-dividido/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-md">
                             <p class="text-sm text-gray-600 mb-2">Te deben</p>
                             <p class="text-xl font-bold text-lima-compartida">{{ formatMoney(balances[currentUser.id].owedToThem) }}</p>
                         </div>
-                        <div class="bg-blanco-dividido/80 rounded-lg p-4 text-center">
+                        <div class="bg-blanco-dividido/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-md">
                             <p class="text-sm text-gray-600 mb-2">Debes</p>
                             <p class="text-xl font-bold text-red-500">{{ formatMoney(balances[currentUser.id].owes) }}</p>
                         </div>
@@ -97,10 +104,10 @@
                 </div>
 
                 <!-- Dinero que te deben -->
-                <div v-if="peopleWhoOweMe.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                <div v-if="peopleWhoOweMe.length > 0" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 border border-lima-compartida/20">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 bg-lima-compartida rounded-full flex items-center justify-center">
-                            <span class="text-xl">💰</span>
+                        <div class="w-12 h-12 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">💰</span>
                         </div>
                         <div>
                             <h2 class="text-xl font-bold text-gris-billetera">Dinero que te deben</h2>
@@ -112,11 +119,11 @@
                         <div 
                             v-for="debt in peopleWhoOweMe" 
                             :key="`owed-${debt.userId}`"
-                            class="border border-lima-compartida/20 bg-lima-compartida/5 rounded-lg p-4 hover:bg-lima-compartida/10 transition-colors"
+                            class="border-2 border-lima-compartida/20 bg-gradient-to-r from-lima-compartida/5 to-lima-compartida/10 rounded-xl p-4 hover:border-lima-compartida/40 transition-all duration-200 hover:shadow-md"
                         >
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-bold">
+                                    <div class="w-12 h-12 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-bold text-lg shadow-md">
                                         {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
                                     </div>
                                     <div>
@@ -128,9 +135,9 @@
                                     <p class="text-xl font-bold text-lima-compartida">{{ formatMoney(debt.amount) }}</p>
                                     <button 
                                         @click="sendReminder(debt.userId, debt.amount)"
-                                        class="mt-1 px-3 py-1 bg-azul-tiquet text-blanco-dividido text-xs rounded-full hover:bg-azul-claro-viaje transition-colors"
+                                        class="mt-2 px-3 py-1 bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje text-blanco-dividido text-xs rounded-full hover:from-azul-tiquet/90 hover:to-azul-claro-viaje/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                     >
-                                        Recordar
+                                        💌 Recordar
                                     </button>
                                 </div>
                             </div>
@@ -157,10 +164,10 @@
                 </div>
 
                 <!-- Dinero que debes -->
-                <div v-if="peopleIOwe.length > 0" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6">
+                <div v-if="peopleIOwe.length > 0" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 border border-red-200">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
-                            <span class="text-xl text-blanco-dividido">💸</span>
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">💸</span>
                         </div>
                         <div>
                             <h2 class="text-xl font-bold text-gris-billetera">Dinero que debes</h2>
@@ -172,11 +179,11 @@
                         <div 
                             v-for="debt in peopleIOwe" 
                             :key="`owe-${debt.userId}`"
-                            class="border border-red-200 bg-red-50 rounded-lg p-4 hover:bg-red-100 transition-colors"
+                            class="border-2 border-red-200 bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-4 hover:border-red-300 transition-all duration-200 hover:shadow-md"
                         >
                             <div class="flex items-center justify-between mb-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-bold">
+                                    <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-bold text-lg shadow-md">
                                         {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
                                     </div>
                                     <div>
@@ -188,9 +195,9 @@
                                     <p class="text-xl font-bold text-red-600">{{ formatMoney(debt.amount) }}</p>
                                     <button 
                                         @click="payDebt(debt.userId, debt.amount)"
-                                        class="mt-1 px-4 py-1 bg-lima-compartida text-gris-billetera text-xs rounded-full hover:bg-azul-claro-viaje transition-colors font-medium"
+                                        class="mt-2 px-4 py-1 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-xs rounded-full hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5"
                                     >
-                                        Pagar
+                                        💳 Pagar
                                     </button>
                                 </div>
                             </div>
