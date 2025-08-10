@@ -206,7 +206,7 @@
                 </div>
                 
                 <!-- Botón de añadir gasto como tarjeta -->
-                <div class="bg-gradient-to-br from-lima-compartida/20 to-lima-compartida/10 rounded-2xl shadow-lg border-2 border-dashed border-lima-compartida/40 hover:border-lima-compartida hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 sm:col-span-2 xl:col-span-1">
+                <div class="bg-gradient-to-br from-lima-compartida/20 to-lima-compartida/10 rounded-2xl shadow-lg border-2 border-dashed border-lima-compartida/40 hover:border-lima-compartida hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <button 
                         @click="showAddExpenseModal = true"
                         :disabled="expenseStore.isLoading || !currentUser"
@@ -217,6 +217,21 @@
                         </div>
                         <p class="text-sm font-semibold text-gris-billetera">Añadir gasto</p>
                         <p class="text-xs text-gray-600 mt-1">Registrar nuevo gasto</p>
+                    </button>
+                </div>
+
+                <!-- Botón de gasto compartido -->
+                <div class="bg-gradient-to-br from-azul-claro-viaje/20 to-azul-tiquet/10 rounded-2xl shadow-lg border-2 border-dashed border-azul-claro-viaje/40 hover:border-azul-tiquet hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <button 
+                        @click="showSplitExpenseModal = true"
+                        :disabled="expenseStore.isLoading || !currentUser || users.length < 2"
+                        class="w-full h-full p-6 text-center disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                        <div class="w-12 h-12 bg-azul-claro-viaje/20 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-azul-claro-viaje/30 transition-colors">
+                            <span class="text-2xl group-hover:scale-110 transition-transform">🤝</span>
+                        </div>
+                        <p class="text-sm font-semibold text-gris-billetera">Gasto compartido</p>
+                        <p class="text-xs text-gray-600 mt-1">Dividir entre varios</p>
                     </button>
                 </div>
             </div>
@@ -850,6 +865,15 @@
                 @expense-added="onExpenseAdded"
             />
 
+            <!-- Modal para gasto compartido -->
+            <SplitExpenseModal 
+                v-if="showSplitExpenseModal"
+                :selected-dinero="selectedDinero"
+                :users="users"
+                @close="showSplitExpenseModal = false"
+                @expense-created="onExpenseAdded"
+            />
+
             <!-- Modal de presupuestos -->
             <BudgetModal 
                 v-if="showBudgetModal"
@@ -878,11 +902,13 @@ const budgetStore = useBudgetStore()
 
 // Reactive data
 const showAddExpenseModal = ref(false)
+const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
 const selectedPeriod = ref('month') // week, month, year, all
 
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
+const users = computed(() => userStore.getAllUsers)
 const selectedDinero = computed(() => {
     const selectedDineroId = contextStore.getSelectedDineroId
     return selectedDineroId ? dineroStore.getDineroById(selectedDineroId) : null
@@ -1353,6 +1379,7 @@ const getCategoryIcon = (category) => {
 
 const onExpenseAdded = async () => {
     showAddExpenseModal.value = false
+    showSplitExpenseModal.value = false
     alertStore.success('Gasto añadido correctamente')
     
     // Refrescar los datos
