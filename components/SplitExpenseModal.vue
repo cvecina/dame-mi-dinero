@@ -516,6 +516,9 @@ const toggleParticipant = (userId) => {
         formData.value.participants.splice(index, 1)
         delete customAmounts.value[userId]
     }
+    
+    // Recalcular splits después de cambiar participantes
+    calculateSplits()
 }
 
 const selectAllParticipants = () => {
@@ -532,6 +535,9 @@ const selectAllParticipants = () => {
             }
         })
     }
+    
+    // Recalcular splits después de cambiar participantes
+    calculateSplits()
 }
 
 const calculateSplits = () => {
@@ -539,6 +545,12 @@ const calculateSplits = () => {
     
     if (!formData.value.amount || formData.value.participants.length === 0) {
         splits.value = {}
+        // Limpiar customAmounts para usuarios no seleccionados
+        const newCustomAmounts = {}
+        formData.value.participants.forEach(userId => {
+            newCustomAmounts[userId] = customAmounts.value[userId] || 0
+        })
+        customAmounts.value = newCustomAmounts
         return
     }
 
@@ -551,25 +563,37 @@ const calculateSplits = () => {
         const baseAmount = Math.floor((total * 100) / participantCount) / 100
         const remainder = Math.round((total * 100) % participantCount)
         
-        // Asignar cantidades
+        // Asignar cantidades solo a participantes seleccionados
         const newSplits = {}
+        const newCustomAmounts = {}
+        
         participants.forEach((userId, index) => {
             // Los primeros 'remainder' participantes obtienen 1 céntimo extra
             const extraCent = index < remainder ? 0.01 : 0
             const amount = Math.round((baseAmount + extraCent) * 100) / 100
             newSplits[userId] = amount
-            customAmounts.value[userId] = amount
+            newCustomAmounts[userId] = amount
         })
         
         splits.value = newSplits
+        customAmounts.value = newCustomAmounts
     } else {
-        // Modo personalizado
-        splits.value = { ...customAmounts.value }
+        // Modo personalizado - solo mantener customAmounts para participantes seleccionados
+        const newCustomAmounts = {}
+        formData.value.participants.forEach(userId => {
+            newCustomAmounts[userId] = customAmounts.value[userId] || 0
+        })
+        customAmounts.value = newCustomAmounts
+        splits.value = { ...newCustomAmounts }
     }
 }
 
 const submitSplitExpense = async () => {
     console.log('submitSplitExpense')
+    console.log('Split mode:', splitMode.value)
+    console.log('Participants selected:', formData.value.participants)
+    console.log('Splits:', splits.value)
+    console.log('Custom amounts:', customAmounts.value)
     
     if (!isFormValid.value) {
         if (splitMode.value === 'custom' && Math.abs(customSplitsDifference.value) > 0.01) {
@@ -582,6 +606,29 @@ const submitSplitExpense = async () => {
     try {
         // Usar las cantidades calculadas o personalizadas
         const finalSplits = splitMode.value === 'equal' ? splits.value : customAmounts.value
+        console.log('Final splits to use:', finalSplits)
+        
+        // Crear array de participantes solo con aquellos que tienen una cantidad > 0
+        const participantsWithAmounts = []
+        
+        // Filtrar solo los participantes seleccionados que tienen un monto asignado
+        for (const userId of formData.value.participants) {
+            const amount = finalSplits[userId]
+            if (amount && amount > 0) {
+                participantsWithAmounts.push({
+                    userId: parseInt(userId),
+                    amount: parseFloat(amount)
+                })
+            }
+        }
+        
+        console.log('Participants with amounts:', participantsWithAmounts)
+        
+        // Verificar que tenemos participantes válidos
+        if (participantsWithAmounts.length === 0) {
+            alertStore.error('Debe haber al menos un participante con una cantidad válida')
+            return
+        }
         
         // Preparar datos del gasto
         const expenseData = {
@@ -591,11 +638,10 @@ const submitSplitExpense = async () => {
             description: formData.value.description,
             dineroId: props.selectedDinero.id,
             paidBy: parseInt(formData.value.paidBy),
-            participants: formData.value.participants.map(id => ({
-                userId: parseInt(id),
-                amount: finalSplits[id] || 0
-            }))
+            participants: participantsWithAmounts
         }
+        
+        console.log('Expense data to send:', expenseData)
 
         // Crear el gasto
         await expenseStore.addExpense(expenseData)
@@ -604,7 +650,7 @@ const submitSplitExpense = async () => {
         emit('expense-created')
         emit('close')
         
-        // Resetear formulario
+        // Resetear formulario completamente
         formData.value = {
             title: '',
             amount: '',
@@ -616,6 +662,9 @@ const submitSplitExpense = async () => {
         splits.value = {}
         customAmounts.value = {}
         splitMode.value = 'equal'
+        calculatorDisplay.value = '0'
+        showCalculator.value = false
+        showPersonalCalculator.value = {}
         
     } catch (error) {
         console.error('Error creating split expense:', error)

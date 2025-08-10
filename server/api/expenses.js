@@ -26,14 +26,28 @@ export default defineEventHandler(async (event) => {
             // Obtener gastos existentes
             const existingExpenses = await $fetch('/api/storage/expenses') || []
             
-            // Calcular la división equitativa
-            const splitAmount = amount / participants.length
-            const remainder = (amount * 100) % (participants.length * 100)
+            // Determinar si participants es un array simple de IDs o objetos con {userId, amount}
+            let splits = []
+            let participantIds = []
             
-            const splits = participants.map((userId, index) => ({
-                userId: parseInt(userId),
-                amount: Math.round((splitAmount + (index < remainder / 100 ? 0.01 : 0)) * 100) / 100
-            }))
+            if (participants.length > 0 && typeof participants[0] === 'object' && participants[0].userId !== undefined) {
+                // Formato nuevo: array de objetos con {userId, amount}
+                splits = participants.map(p => ({
+                    userId: parseInt(p.userId),
+                    amount: parseFloat(p.amount)
+                }))
+                participantIds = participants.map(p => parseInt(p.userId))
+            } else {
+                // Formato legacy: array simple de IDs - calcular división equitativa
+                participantIds = participants.map(id => parseInt(id))
+                const splitAmount = amount / participants.length
+                const remainder = (amount * 100) % (participants.length * 100)
+                
+                splits = participants.map((userId, index) => ({
+                    userId: parseInt(userId),
+                    amount: Math.round((splitAmount + (index < remainder / 100 ? 0.01 : 0)) * 100) / 100
+                }))
+            }
             
             // Crear nuevo gasto
             const newExpense = {
@@ -44,7 +58,7 @@ export default defineEventHandler(async (event) => {
                 description: description?.trim() || '',
                 dineroId: parseInt(dineroId), // Agregar dineroId
                 paidBy: parseInt(paidBy),
-                participants: participants.map(id => parseInt(id)),
+                participants: participantIds,
                 splits,
                 date: new Date().toISOString(),
                 createdAt: new Date().toISOString()
