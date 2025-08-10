@@ -109,9 +109,11 @@
                 </div>
             </div>
 
-            <!-- Panel de alertas -->
-            <div v-if="hasAlerts && isPanelVisible('alerts')" class="mb-8">
-                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400 shadow-lg">
+            <!-- Contenedor dinámico para paneles reordenables -->
+            <div class="flex flex-col">
+                <!-- Panel de alertas -->
+                <div v-if="hasAlerts && isPanelVisible('alerts')" class="mb-8" :style="{ order: getPanelOrder('alerts') }">
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400 shadow-lg">
                     <h3 class="text-lg font-bold text-gris-billetera mb-4 flex items-center gap-2">
                         <span class="text-yellow-500">⚠️</span>
                         Alertas importantes
@@ -167,7 +169,7 @@
             </div>
 
             <!-- Resumen de balances -->
-            <div v-if="isPanelVisible('summary')" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div v-if="isPanelVisible('summary')" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8" :style="{ order: getPanelOrder('summary') }">
                 <!-- Total gastado -->
                 <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-tiquet/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     <div class="flex items-center justify-between mb-4">
@@ -229,7 +231,7 @@
             </div>
 
             <!-- Presupuestos detallados -->
-            <div v-if="isPanelVisible('budgets')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+            <div v-if="isPanelVisible('budgets')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" :style="{ order: getPanelOrder('budgets') }">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2 sm:gap-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
@@ -451,7 +453,7 @@
             </div>
 
             <!-- Estadísticas por categoría -->
-            <div v-if="isPanelVisible('categories')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" data-category-section>
+            <div v-if="isPanelVisible('categories')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" data-category-section :style="{ order: getPanelOrder('categories') }">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2 sm:gap-0">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-azul-tiquet/10 rounded-xl flex items-center justify-center">
@@ -481,7 +483,21 @@
                     </button>
                 </div>
 
-                <div v-else class="space-y-4">
+                <div v-else class="space-y-6">
+                    <!-- Gráfico de categorías -->
+                    <div class="bg-marfil-mapamundi/50 rounded-xl p-6 border border-azul-claro-viaje/20">
+                        <h3 class="text-lg font-semibold text-gris-billetera mb-4 flex items-center gap-2">
+                            <span class="text-azul-tiquet">📈</span>
+                            Visualización de gastos
+                        </h3>
+                        <ExpenseChart 
+                            :expenses="getExpensesByPeriod()" 
+                            type="category"
+                        />
+                    </div>
+                    
+                    <!-- Lista detallada de categorías -->
+                    <div class="space-y-4">
                     <div 
                         v-for="(category, index) in expensesByCategory.slice(0, 6)" 
                         :key="category.name"
@@ -536,11 +552,12 @@
                             </p>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Lista de gastos recientes -->
-            <div v-if="isPanelVisible('recent')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+            <div v-if="isPanelVisible('recent')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20" :style="{ order: getPanelOrder('recent') }">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
@@ -633,7 +650,7 @@
             </div>
 
             <!-- Pagos pendientes -->
-            <div v-if="isPanelVisible('pending')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-red-200/50">
+            <div v-if="isPanelVisible('pending')" class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-red-200/50" :style="{ order: getPanelOrder('pending') }">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
@@ -719,7 +736,7 @@
             </div>
 
             <!-- Resumen de balances personales -->
-            <div v-if="isPanelVisible('balance')" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6" data-balance-section>
+            <div v-if="isPanelVisible('balance')" class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6" data-balance-section :style="{ order: getPanelOrder('balance') }">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2 sm:gap-0">
                     <h2 class="text-lg sm:text-xl font-semibold text-gris-billetera">Mi situación financiera</h2>
                     <NuxtLink 
@@ -849,6 +866,9 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Cierre del contenedor dinámico para paneles reordenables -->
+            </div>
 
             <!-- Modal para gasto -->
             <SplitExpenseModal 
@@ -887,30 +907,48 @@
                             </button>
                         </div>
 
-                        <div class="space-y-3">
-                            <div 
-                                v-for="panel in dashboardPanels" 
-                                :key="panel.id"
-                                class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 mb-3">Arrastra para reordenar los paneles:</p>
+                            <draggable 
+                                v-model="dashboardPanels" 
+                                class="space-y-3"
+                                :animation="200"
+                                ghost-class="opacity-50"
+                                chosen-class="scale-105"
+                                handle=".drag-handle"
+                                @end="onPanelReorder"
+                                item-key="id"
                             >
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xl">{{ panel.icon }}</span>
-                                    <div>
-                                        <h3 class="font-semibold text-gris-billetera">{{ panel.name }}</h3>
-                                        <p class="text-xs text-gray-600">{{ panel.description }}</p>
-                                    </div>
-                                </div>
-                                
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        :checked="panel.visible"
-                                        @change="togglePanelVisibility(panel.id)"
-                                        class="sr-only peer"
+                                <template #item="{ element: panel }">
+                                    <div 
+                                        :key="panel.id"
+                                        class="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                                     >
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-azul-tiquet"></div>
-                                </label>
-                            </div>
+                                        <div class="flex items-center gap-3">
+                                            <div class="drag-handle cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600">
+                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M7 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <span class="text-xl">{{ panel.icon }}</span>
+                                            <div>
+                                                <h3 class="font-semibold text-gris-billetera">{{ panel.name }}</h3>
+                                                <p class="text-xs text-gray-600">{{ panel.description }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                :checked="panel.visible"
+                                                @change="togglePanelVisibility(panel.id)"
+                                                class="sr-only peer"
+                                            >
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-azul-tiquet"></div>
+                                        </label>
+                                    </div>
+                                </template>
+                            </draggable>
                         </div>
 
                         <div class="flex gap-3 mt-6">
@@ -943,6 +981,8 @@ import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useBudgetStore } from '~/stores/budget.store'
 import formatearTotal from '~/utils/formatMoney'
+
+const { debug, log, error } = useLogger()
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -990,7 +1030,7 @@ const dashboardPanels = ref([
         icon: '📊', 
         visible: true, 
         order: 4,
-        description: 'Análisis de gastos organizados por categorías'
+        description: 'Análisis detallado de gastos organizados por categorías con gráficos'
     },
     { 
         id: 'recent', 
@@ -1040,10 +1080,17 @@ const isPanelVisible = (panelId) => {
     return panel ? panel.visible : false
 }
 
+// Computed para paneles ordenados y visibles
+const orderedVisiblePanels = computed(() => {
+    return dashboardPanels.value
+        .filter(panel => panel.visible)
+        .sort((a, b) => a.order - b.order)
+})
+
 // Computed properties
 const expenses = computed(() => {
     const periodExpenses = getExpensesByPeriod()
-    console.log('Computing expenses for period:', selectedPeriod.value, 'Found:', periodExpenses.length)
+    debug('Computing expenses for period', { period: selectedPeriod.value, found: periodExpenses.length })
     
     // Ordenar por fecha más reciente primero
     return [...periodExpenses].sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -1515,7 +1562,7 @@ const markPaymentAsPaid = async (expenseId) => {
     try {
         await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
         alertStore.success('Pago marcado como pagado')
-        console.log('markPaymentAsPaid')
+        debug('markPaymentAsPaid')
     } catch (error) {
         alertStore.error('Error al marcar el pago')
     }
@@ -1524,7 +1571,7 @@ const markPaymentAsPaid = async (expenseId) => {
 const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
     alertStore.info(`Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
-    console.log('sendReminder', { userId, amount, userName })
+    debug('sendReminder', { userId, amount, userName })
 }
 
 const payDebt = async (creditorId, amount) => {
@@ -2009,6 +2056,26 @@ const togglePanelVisibility = (panelId) => {
     }
 }
 
+const onPanelReorder = () => {
+    // Actualizar el orden de los paneles después del drag & drop
+    dashboardPanels.value.forEach((panel, index) => {
+        panel.order = index + 1
+    })
+    
+    // Guardar la nueva configuración en localStorage
+    if (process.client) {
+        localStorage.setItem('dashboardPanelConfig', JSON.stringify(
+            dashboardPanels.value.map(panel => ({
+                id: panel.id,
+                visible: panel.visible,
+                order: panel.order
+            }))
+        ))
+    }
+    
+    alertStore.success('Orden de paneles actualizado')
+}
+
 const activatePanel = (panelId) => {
     const panel = dashboardPanels.value.find(p => p.id === panelId)
     if (panel && !panel.visible) {
@@ -2153,6 +2220,26 @@ watch(selectedPeriod, (newPeriod, oldPeriod) => {
 watch(() => budgetStore.budgets, () => {
     console.log('Budgets updated, refreshing progress data')
 }, { deep: true })
+
+// Método para obtener el nombre del componente de cada panel
+const getPanelComponent = (panelId) => {
+    const componentMap = {
+        'alerts': 'alerts-panel',
+        'summary': 'summary-panel', 
+        'budgets': 'budgets-panel',
+        'categories': 'categories-panel',
+        'recent': 'recent-panel',
+        'pending': 'pending-panel',
+        'balance': 'balance-panel'
+    }
+    return componentMap[panelId] || null
+}
+
+// Método para obtener el order CSS de cada panel
+const getPanelOrder = (panelId) => {
+    const panel = dashboardPanels.value.find(p => p.id === panelId)
+    return panel ? panel.order : 999
+}
 
 console.log('dashboard')
 </script>

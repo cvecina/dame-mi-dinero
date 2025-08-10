@@ -40,18 +40,11 @@ export const useExpenseStore = defineStore({
             // Filtrar gastos por dinero
             const expensesByDinero = state.expenses.filter(expense => expense.dineroId === dineroId);
             
+            console.log(`[getBalancesByDinero] Processing ${expensesByDinero.length} expenses for dinero ${dineroId}`);
+            
             // Inicializar balances para todos los usuarios que participan en este dinero
             expensesByDinero.forEach(expense => {
-                expense.participants.forEach(userId => {
-                    if (!balances[userId]) {
-                        balances[userId] = { 
-                            totalSpent: 0,    // Total que ha gastado (pagado de su bolsillo)
-                            owes: 0,          // Lo que debe a otros
-                            owedToThem: 0,    // Lo que le deben a él
-                            balance: 0        // Balance final
-                        };
-                    }
-                });
+                // Inicializar balance para el pagador
                 if (!balances[expense.paidBy]) {
                     balances[expense.paidBy] = { 
                         totalSpent: 0, 
@@ -60,6 +53,35 @@ export const useExpenseStore = defineStore({
                         balance: 0 
                     };
                 }
+                
+                // Inicializar balances para participantes
+                if (expense.participants && Array.isArray(expense.participants)) {
+                    expense.participants.forEach(userId => {
+                        if (!balances[userId]) {
+                            balances[userId] = { 
+                                totalSpent: 0,    // Total que ha gastado (pagado de su bolsillo)
+                                owes: 0,          // Lo que debe a otros
+                                owedToThem: 0,    // Lo que le deben a él
+                                balance: 0        // Balance final
+                            };
+                        }
+                    });
+                }
+                
+                // Inicializar balances para usuarios en splits (por si hay inconsistencias)
+                if (expense.splits && Array.isArray(expense.splits)) {
+                    expense.splits.forEach(split => {
+                        const userId = parseInt(split.userId);
+                        if (!balances[userId]) {
+                            balances[userId] = { 
+                                totalSpent: 0, 
+                                owes: 0, 
+                                owedToThem: 0, 
+                                balance: 0 
+                            };
+                        }
+                    });
+                }
             });
             
             // Procesar cada gasto del dinero
@@ -67,47 +89,71 @@ export const useExpenseStore = defineStore({
                 const amount = parseFloat(expense.amount);
                 const payerId = expense.paidBy;
                 
+                // Verificar que el pagador tenga un balance inicializado
+                if (!balances[payerId]) {
+                    balances[payerId] = { totalSpent: 0, owes: 0, owedToThem: 0, balance: 0 };
+                }
+                
                 // 1. El pagador original gastó este dinero
                 balances[payerId].totalSpent += amount;
                 
                 // 2. Calcular deudas y créditos por participante
-                expense.splits.forEach(split => {
-                    const userId = parseInt(split.userId);
-                    const amountOwed = parseFloat(split.amount);
-                    
-                    // Verificar si ha pagado individualmente
-                    const hasPaidIndividually = expense.payments && expense.payments[userId];
-                    
-                    if (userId === payerId) {
-                        // El pagador original: si otros no han pagado, le deben dinero
-                        expense.splits.forEach(otherSplit => {
-                            const otherUserId = parseInt(otherSplit.userId);
-                            const otherAmount = parseFloat(otherSplit.amount);
-                            
-                            if (otherUserId !== payerId) {
-                                const otherHasPaid = expense.payments && expense.payments[otherUserId];
-                                if (!otherHasPaid) {
-                                    balances[payerId].owedToThem += otherAmount;
-                                }
-                            }
-                        });
-                    } else {
-                        // Otros participantes
-                        if (!hasPaidIndividually) {
-                            // No ha pagado: le debe al pagador original
-                            balances[userId].owes += amountOwed;
-                        } else {
-                            // Ha pagado individualmente: suma a su gasto total
-                            balances[userId].totalSpent += amountOwed;
+                if (expense.splits && Array.isArray(expense.splits)) {
+                    expense.splits.forEach(split => {
+                        const userId = parseInt(split.userId);
+                        const amountOwed = parseFloat(split.amount);
+                        
+                        // Verificar que el usuario tenga un balance inicializado
+                        if (!balances[userId]) {
+                            balances[userId] = { totalSpent: 0, owes: 0, owedToThem: 0, balance: 0 };
                         }
-                    }
-                });
+                        
+                        // Verificar si ha pagado individualmente
+                        const hasPaidIndividually = expense.payments && expense.payments[userId];
+                        
+                        if (userId === payerId) {
+                            // El pagador original: si otros no han pagado, le deben dinero
+                            if (expense.splits && Array.isArray(expense.splits)) {
+                                expense.splits.forEach(otherSplit => {
+                                    const otherUserId = parseInt(otherSplit.userId);
+                                    const otherAmount = parseFloat(otherSplit.amount);
+                                    
+                                    if (otherUserId !== payerId) {
+                                        // Verificar que el otro usuario tenga un balance inicializado
+                                        if (!balances[otherUserId]) {
+                                            balances[otherUserId] = { totalSpent: 0, owes: 0, owedToThem: 0, balance: 0 };
+                                        }
+                                        
+                                        const otherHasPaid = expense.payments && expense.payments[otherUserId];
+                                        if (!otherHasPaid) {
+                                            balances[payerId].owedToThem += otherAmount;
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                            // Otros participantes
+                            if (!hasPaidIndividually) {
+                                // No ha pagado: le debe al pagador original
+                                balances[userId].owes += amountOwed;
+                            } else {
+                                // Ha pagado individualmente: suma a su gasto total
+                                balances[userId].totalSpent += amountOwed;
+                            }
+                        }
+                    });
+                }
             });
             
             // Calcular balance final: (lo que le deben + lo que ha gastado) - lo que debe
             Object.keys(balances).forEach(userId => {
                 const userBalance = balances[userId];
-                userBalance.balance = Math.round((userBalance.owedToThem - userBalance.owes) * 100) / 100;
+                if (userBalance) {
+                    userBalance.balance = Math.round((userBalance.owedToThem - userBalance.owes) * 100) / 100;
+                } else {
+                    console.warn(`Balance not found for user ${userId}`, balances);
+                    balances[userId] = { totalSpent: 0, owes: 0, owedToThem: 0, balance: 0 };
+                }
             });
             
             console.log('getBalancesByDinero');
