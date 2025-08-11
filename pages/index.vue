@@ -83,6 +83,13 @@
                     <!-- Botones de acción -->
                     <div class="flex flex-wrap gap-3">
                         <button 
+                            @click="showAnalytics = !showAnalytics"
+                            class="px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-semibold rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            <span class="text-sm">📈</span>
+                            {{ showAnalytics ? 'Ocultar' : 'Mostrar' }} Analytics
+                        </button>
+                        <button 
                             @click="showBudgetModal = true"
                             class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
@@ -107,6 +114,14 @@
                         </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Analytics Dashboard -->
+            <div v-if="showAnalytics" class="mb-8">
+                <AnalyticsDashboard 
+                    :expenses="expenses" 
+                    :budgets="budgets"
+                />
             </div>
 
             <!-- Contenedor dinámico para paneles reordenables -->
@@ -981,6 +996,8 @@ import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useBudgetStore } from '~/stores/budget.store'
 import formatearTotal from '~/utils/formatMoney'
+import { useLogger } from '~/composables/useLogger'
+import AnalyticsDashboard from '~/components/AnalyticsDashboard.vue'
 
 const { debug, log, error } = useLogger()
 
@@ -995,6 +1012,7 @@ const budgetStore = useBudgetStore()
 // Reactive data
 const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
+const showAnalytics = ref(false)
 const selectedPeriod = ref('month') // week, month, year, all
 
 // Panel configuration
@@ -2189,6 +2207,9 @@ onMounted(async () => {
         
         console.log('Dashboard: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)
         console.log('Total expenses in store:', expenseStore.getAllExpenses.length)
+        
+        // Manejar shortcuts de PWA
+        handlePWAShortcuts()
     } catch (error) {
         console.error('Error al cargar datos:', error)
         alertStore.error('Error al cargar los datos')
@@ -2239,6 +2260,39 @@ const getPanelComponent = (panelId) => {
 const getPanelOrder = (panelId) => {
     const panel = dashboardPanels.value.find(p => p.id === panelId)
     return panel ? panel.order : 999
+}
+
+// Manejar shortcuts de PWA
+const handlePWAShortcuts = () => {
+    if (process.client) {
+        const url = new URL(window.location.href)
+        const action = url.searchParams.get('action')
+        
+        switch (action) {
+            case 'add-expense':
+                // Abrir modal de agregar gasto
+                setTimeout(() => {
+                    showSplitExpenseModal.value = true
+                }, 500)
+                break
+                
+            case 'budgets':
+                // Abrir modal de presupuestos
+                setTimeout(() => {
+                    showBudgetModal.value = true
+                }, 500)
+                break
+                
+            default:
+                // No hay acción específica
+                break
+        }
+        
+        // Limpiar la URL después de procesar
+        if (action) {
+            window.history.replaceState({}, document.title, '/')
+        }
+    }
 }
 
 console.log('dashboard')

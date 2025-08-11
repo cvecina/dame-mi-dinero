@@ -182,6 +182,9 @@
       <slot name="footer" />
     </div>
 
+    <!-- PWA Manager -->
+    <PWAManager />
+
     <!-- Toast/Alert -->
     <Toast />
 
