@@ -89,19 +89,40 @@ export const usePWAManager = () => {
 
     // Enviar notificación local
     const sendNotification = (title, options = {}) => {
-        if (!process.client || Notification.permission !== 'granted') {
+        if (!process.client || !('Notification' in window)) {
+            console.warn('Notifications not supported in this browser')
+            return
+        }
+        
+        if (Notification.permission !== 'granted') {
+            console.warn('Notification permission not granted')
             return
         }
 
         const defaultOptions = {
-            icon: '/icons/icon-192x192.png',
-            badge: '/icons/icon-96x96.png',
+            icon: '/icons/icon-192x192.svg',
+            badge: '/icons/icon-96x96.svg',
             tag: 'dame-mi-dinero',
             renotify: true,
+            silent: false,
+            vibrate: [200, 100, 200], // Vibración en móviles
             ...options
         }
 
-        new Notification(title, defaultOptions)
+        try {
+            const notification = new Notification(title, defaultOptions)
+            
+            // Auto-cerrar después de 10 segundos si no se especifica requireInteraction
+            if (!options.requireInteraction) {
+                setTimeout(() => {
+                    notification.close()
+                }, 10000)
+            }
+            
+            return notification
+        } catch (error) {
+            console.error('Error creating notification:', error)
+        }
     }
 
     // Registrar service worker para notificaciones

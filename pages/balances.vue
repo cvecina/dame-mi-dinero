@@ -308,6 +308,13 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Modal de permisos de notificación -->
+        <NotificationPermissionModal
+            :show="showNotificationModal"
+            @close="closeNotificationModal"
+            @request-permission="handleRequestPermission"
+        />
     </div>
 </template>
 
@@ -318,6 +325,8 @@ import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
+import { usePWAManager } from '~/composables/usePWAManager'
+import NotificationPermissionModal from '~/components/NotificationPermissionModal.vue'
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -325,6 +334,12 @@ const userStore = useUserStore()
 const alertStore = useAlertStore()
 const contextStore = useContextStore()
 const dineroStore = useDineroStore()
+
+// PWA Manager
+const { sendNotification, requestNotificationPermission } = usePWAManager()
+
+// Reactive data
+const showNotificationModal = ref(false)
 
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
@@ -508,7 +523,49 @@ const formatMoney = (amount) => {
 
 const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
-    alertStore.info(`Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
+    
+    // Verificar si las notificaciones están habilitadas
+    if (!process.client || !('Notification' in window)) {
+        alertStore.error('❌ Tu navegador no soporta notificaciones')
+        return
+    }
+    
+    if (Notification.permission === 'denied') {
+        alertStore.error('❌ Las notificaciones están bloqueadas. Habílitalas en la configuración del navegador.')
+        return
+    }
+    
+    if (Notification.permission !== 'granted') {
+        showNotificationModal.value = true
+        return
+    }
+    
+    // Enviar notificación
+    sendNotification(`💌 Recordatorio de pago`, {
+        body: `${userName} te debe ${formatMoney(amount)}. ¡Recuérdales que es hora de saldar!`,
+        icon: '/icons/icon-192x192.svg',
+        badge: '/icons/icon-96x96.svg',
+        tag: `reminder-${userId}-${Date.now()}`,
+        data: {
+            type: 'payment-reminder',
+            userId: userId,
+            amount: amount,
+            userName: userName
+        },
+        actions: [
+            {
+                action: 'view-balances',
+                title: 'Ver balances'
+            },
+            {
+                action: 'dismiss',
+                title: 'Cerrar'
+            }
+        ],
+        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+    })
+    
+    alertStore.success(`✅ Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
     console.log('sendReminder', { userId, amount, userName })
 }
 
@@ -584,6 +641,22 @@ watch(() => contextStore.getSelectedDineroId, async (newDineroId, oldDineroId) =
         // Los datos se actualizarán automáticamente a través de los computed
     }
 }, { immediate: true })
+
+// Funciones para el modal de permisos
+const handleRequestPermission = async () => {
+    const hasPermission = await requestNotificationPermission()
+    showNotificationModal.value = false
+    
+    if (hasPermission) {
+        alertStore.success('✅ ¡Notificaciones habilitadas correctamente!')
+    } else {
+        alertStore.error('❌ No se pudieron habilitar las notificaciones')
+    }
+}
+
+const closeNotificationModal = () => {
+    showNotificationModal.value = false
+}
 
 console.log('balances')
 </script>

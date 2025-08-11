@@ -90,6 +90,13 @@
                             {{ showAnalytics ? 'Ocultar' : 'Mostrar' }} Analytics
                         </button>
                         <button 
+                            @click="testNotification"
+                            class="px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            <span class="text-sm">🔔</span>
+                            Probar Notificación
+                        </button>
+                        <button 
                             @click="showBudgetModal = true"
                             class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
@@ -984,6 +991,13 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Modal de permisos de notificación -->
+        <NotificationPermissionModal
+            :show="showNotificationModal"
+            @close="closeNotificationModal"
+            @request-permission="handleRequestPermission"
+        />
     </div>
 </template>
 
@@ -997,9 +1011,12 @@ import { useDineroStore } from '~/stores/dinero.store'
 import { useBudgetStore } from '~/stores/budget.store'
 import formatearTotal from '~/utils/formatMoney'
 import { useLogger } from '~/composables/useLogger'
+import { usePWAManager } from '~/composables/usePWAManager'
 import AnalyticsDashboard from '~/components/AnalyticsDashboard.vue'
+import NotificationPermissionModal from '~/components/NotificationPermissionModal.vue'
 
 const { debug, log, error } = useLogger()
+const { sendNotification, requestNotificationPermission } = usePWAManager()
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -1013,6 +1030,7 @@ const budgetStore = useBudgetStore()
 const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
 const showAnalytics = ref(false)
+const showNotificationModal = ref(false)
 const selectedPeriod = ref('month') // week, month, year, all
 
 // Panel configuration
@@ -1588,8 +1606,111 @@ const markPaymentAsPaid = async (expenseId) => {
 
 const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
-    alertStore.info(`Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
+    
+    // Verificar si las notificaciones están habilitadas
+    if (!process.client || !('Notification' in window)) {
+        alertStore.error('❌ Tu navegador no soporta notificaciones')
+        return
+    }
+    
+    if (Notification.permission === 'denied') {
+        alertStore.error('❌ Las notificaciones están bloqueadas. Habílitalas en la configuración del navegador.')
+        return
+    }
+    
+    if (Notification.permission !== 'granted') {
+        showNotificationModal.value = true
+        return
+    }
+    
+    // Enviar notificación
+    sendNotification(`💌 Recordatorio de pago`, {
+        body: `${userName} te debe ${formatMoney(amount)}. ¡Recuérdales que es hora de saldar!`,
+        icon: '/icons/icon-192x192.svg',
+        badge: '/icons/icon-96x96.svg',
+        tag: `reminder-${userId}-${Date.now()}`,
+        data: {
+            type: 'payment-reminder',
+            userId: userId,
+            amount: amount,
+            userName: userName
+        },
+        actions: [
+            {
+                action: 'view-balances',
+                title: 'Ver balances'
+            },
+            {
+                action: 'dismiss',
+                title: 'Cerrar'
+            }
+        ],
+        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+    })
+    
+    alertStore.success(`✅ Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
     debug('sendReminder', { userId, amount, userName })
+}
+
+// Función para probar notificaciones
+const testNotification = async () => {
+    // Verificar si las notificaciones están habilitadas
+    if (!process.client || !('Notification' in window)) {
+        alertStore.error('❌ Tu navegador no soporta notificaciones')
+        return
+    }
+    
+    if (Notification.permission === 'denied') {
+        alertStore.error('❌ Las notificaciones están bloqueadas. Habílitalas en la configuración del navegador.')
+        return
+    }
+    
+    if (Notification.permission !== 'granted') {
+        showNotificationModal.value = true
+        return
+    }
+    
+    // Enviar notificación de prueba
+    sendNotification(`🔔 Notificación de prueba`, {
+        body: `¡Las notificaciones están funcionando correctamente! Ahora puedes enviar recordatorios de pago.`,
+        icon: '/icons/icon-192x192.svg',
+        badge: '/icons/icon-96x96.svg',
+        tag: `test-notification-${Date.now()}`,
+        data: {
+            type: 'test-notification',
+            timestamp: new Date().toISOString()
+        },
+        actions: [
+            {
+                action: 'view-dashboard',
+                title: 'Ver Dashboard'
+            },
+            {
+                action: 'dismiss',
+                title: 'Cerrar'
+            }
+        ],
+        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+    })
+    
+    alertStore.success(`✅ Notificación de prueba enviada correctamente`)
+    debug('testNotification', { permission: Notification.permission })
+}
+
+// Funciones para el modal de permisos
+const handleRequestPermission = async () => {
+    const hasPermission = await requestNotificationPermission()
+    showNotificationModal.value = false
+    
+    if (hasPermission) {
+        alertStore.success('✅ ¡Notificaciones habilitadas correctamente!')
+    } else {
+        alertStore.error('❌ No se pudieron habilitar las notificaciones')
+    }
+}
+
+const closeNotificationModal = () => {
+    showNotificationModal.value = false
 }
 
 const payDebt = async (creditorId, amount) => {
