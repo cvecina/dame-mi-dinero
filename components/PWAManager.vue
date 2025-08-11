@@ -51,7 +51,7 @@
 
         <!-- Botón de actualización -->
         <div 
-            v-if="hasUpdate"
+            v-if="needRefresh"
             class="fixed top-4 left-4 right-4 z-50 bg-green-500 text-white rounded-xl shadow-lg p-3 mx-auto max-w-md"
         >
             <div class="flex items-center gap-3">
@@ -61,7 +61,7 @@
                     <p class="text-xs opacity-90">Nueva versión lista para instalar</p>
                 </div>
                 <button 
-                    @click="update"
+                    @click="updateServiceWorker()"
                     class="px-4 py-2 bg-white text-green-600 rounded-lg font-semibold text-xs hover:bg-white/90 transition-colors"
                 >
                     Actualizar
@@ -81,21 +81,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { usePWAManager } from '~/composables/usePWAManager'
 import { useOffline } from '~/composables/useOffline'
 
-// PWA functionality
-const { 
-  canInstall, 
-  isInstalled, 
-  updateAvailable: hasUpdate, 
-  isOnlinePWA,
-  sendNotification,
-  requestNotificationPermission,
-  installPWA,
-  updatePWA: updateSW,
-  init: initPWA
-} = usePWAManager()
+// Usar el composable PWA oficial de Vite
+const { needRefresh, updateServiceWorker } = process.client ? usePWA() : { needRefresh: ref(false), updateServiceWorker: () => {} }
 
 // Offline functionality
 const { 
@@ -108,6 +97,8 @@ const {
 // Local state
 const dismissed = ref(false)
 const isDev = ref(process.env.NODE_ENV === 'development')
+const canInstall = ref(false)
+const isInstalled = ref(false)
 
 // Methods
 const install = async () => {
@@ -146,13 +137,13 @@ const checkDismissed = () => {
 }
 
 onMounted(async () => {
-    // Inicializar solo una vez
-    try {
-        await initPWA()
-        await initOffline()
-        checkDismissed()
-    } catch (error) {
-        console.error('Error initializing PWA:', error)
+    if (!isDev.value) {
+        try {
+            await initOffline()
+            checkDismissed()
+        } catch (error) {
+            console.error('Error initializing PWA:', error)
+        }
     }
 })
 </script>

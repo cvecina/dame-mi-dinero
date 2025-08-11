@@ -83,22 +83,7 @@ export default defineNuxtConfig({
       clientsClaim: false,
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/api\./,
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'api-cache',
-            networkTimeoutSeconds: 5,
-            expiration: {
-              maxEntries: 100,
-              maxAgeSeconds: 60 * 60 * 24 * 7 // 7 días
-            },
-            cacheableResponse: {
-              statuses: [0, 200]
-            }
-          }
-        },
-        {
-          urlPattern: /\.(?:png|gif|jpg|jpeg|svg|webp)$/,
+          urlPattern: /^https:\/\/.*\.(?:png|gif|jpg|jpeg|svg|webp)$/,
           handler: 'CacheFirst',
           options: {
             cacheName: 'images-cache',
@@ -109,7 +94,7 @@ export default defineNuxtConfig({
           }
         },
         {
-          urlPattern: /\.(?:js|css)$/,
+          urlPattern: /^https:\/\/.*\.(?:js|css)$/,
           handler: 'StaleWhileRevalidate',
           options: {
             cacheName: 'static-cache',
@@ -127,8 +112,7 @@ export default defineNuxtConfig({
     },
     devOptions: {
       enabled: false,
-      suppressWarnings: true,
-      navigateFallback: 'index.html'
+      suppressWarnings: true
     },
     manifest: {
       name: 'Dame Mi Dinero - Control de Gastos',

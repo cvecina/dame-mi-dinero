@@ -106,36 +106,16 @@ export const usePWAManager = () => {
 
     // Registrar service worker para notificaciones
     const registerSW = async () => {
-        // No registrar SW en desarrollo para evitar actualizaciones constantes
-        if (!process.client || !('serviceWorker' in navigator) || process.env.NODE_ENV === 'development') {
+        // No registrar SW personalizado - dejar que Vite PWA maneje todo
+        if (!process.client || process.env.NODE_ENV === 'development') {
             return
         }
-
-        try {
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-                updateViaCache: 'none'
+        
+        // Solo escuchar eventos del SW ya registrado por Vite PWA
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                updateAvailable.value = true
             })
-            
-            // Verificar actualizaciones solo una vez
-            let updateCheckDone = false
-            registration.addEventListener('updatefound', () => {
-                if (updateCheckDone) return
-                updateCheckDone = true
-                
-                const newWorker = registration.installing
-                
-                if (newWorker) {
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            updateAvailable.value = true
-                        }
-                    })
-                }
-            })
-
-            return registration
-        } catch (error) {
-            console.error('Error registering service worker:', error)
         }
     }
 
