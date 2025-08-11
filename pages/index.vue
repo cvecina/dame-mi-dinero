@@ -84,10 +84,11 @@
                     <div class="flex flex-wrap gap-3">
                         <button 
                             @click="showAnalytics = !showAnalytics"
-                            class="px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white text-sm font-semibold rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                            class="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border border-indigo-300"
                         >
-                            <span class="text-sm">📈</span>
-                            {{ showAnalytics ? 'Ocultar' : 'Mostrar' }} Analytics
+                            <span class="text-lg">📈</span>
+                            {{ showAnalytics ? '👁️ Ocultar' : '🔍 Ver' }} Analytics
+                            <span v-if="!showAnalytics" class="bg-white/20 px-2 py-1 rounded-full text-xs">NUEVO</span>
                         </button>
                         <button 
                             @click="showBudgetModal = true"
@@ -118,10 +119,14 @@
 
             <!-- Analytics Dashboard -->
             <div v-if="showAnalytics" class="mb-8">
-                <AnalyticsDashboard 
-                    :expenses="expenses" 
-                    :budgets="budgets"
-                />
+                <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-2 border-indigo-200 rounded-3xl p-1 shadow-xl">
+                    <div class="bg-white rounded-2xl p-2">
+                        <AnalyticsDashboard 
+                            :expenses="expenses" 
+                            :budgets="activeBudgets"
+                        />
+                    </div>
+                </div>
             </div>
 
             <!-- Contenedor dinámico para paneles reordenables -->
@@ -1014,7 +1019,7 @@ const budgetStore = useBudgetStore()
 // Reactive data
 const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
-const showAnalytics = ref(false)
+const showAnalytics = ref(true) // Mostrar analytics por defecto
 const selectedPeriod = ref('month') // week, month, year, all
 
 // Panel configuration
