@@ -34,6 +34,11 @@ Cuando aparezca el modal:
 - Panel de notificaciones del sistema
 - Pueden aparecer en la pantalla de bloqueo
 
+### ⚠️ **Importante para iOS:**
+- **Solo funcionan en Safari**: Chrome, Firefox y otros navegadores en iOS NO soportan notificaciones web
+- **Funcionalidad limitada**: Los botones de acción pueden no funcionar
+- **Recomendación**: Añade la página a tu pantalla de inicio para una mejor experiencia como PWA
+
 ## ⚙️ Configuración por navegador
 
 ### Chrome/Edge/Brave:
@@ -66,15 +71,25 @@ Cuando aparezca el modal:
 ## 🔧 Solución de problemas
 
 ### "❌ Tu navegador no soporta notificaciones"
+
 - Tu navegador es muy antiguo
 - Actualiza a la versión más reciente
+- **En iOS**: Solo Safari soporta notificaciones, otros navegadores no
+
+### "❌ En iOS, las notificaciones solo funcionan en Safari"
+
+- Estás usando Chrome, Firefox u otro navegador en iOS
+- Copia la URL y ábrela en Safari
+- O añade la página a tu pantalla de inicio desde Safari
 
 ### "❌ Las notificaciones están bloqueadas"
+
 - Ve a la configuración del navegador
 - Busca el sitio web en la lista de notificaciones
 - Cambia de "Bloquear" a "Permitir"
 
 ### "⚠️ Necesitas permitir notificaciones"
+
 - Haz clic en el botón "Probar Notificación"
 - Sigue las instrucciones del modal
 

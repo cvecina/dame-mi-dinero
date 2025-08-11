@@ -1016,7 +1016,7 @@ import AnalyticsDashboard from '~/components/AnalyticsDashboard.vue'
 import NotificationPermissionModal from '~/components/NotificationPermissionModal.vue'
 
 const { debug, log, error } = useLogger()
-const { sendNotification, requestNotificationPermission } = usePWAManager()
+const { sendNotification, requestNotificationPermission, isIOS, isIOSSafari, hasNotificationSupport } = usePWAManager()
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -1608,8 +1608,14 @@ const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
     
     // Verificar si las notificaciones están habilitadas
-    if (!process.client || !('Notification' in window)) {
-        alertStore.error('❌ Tu navegador no soporta notificaciones')
+    if (!hasNotificationSupport) {
+        if (isIOS && !isIOSSafari) {
+            alertStore.error('❌ En iOS, las notificaciones solo funcionan en Safari. Abre esta página en Safari para usar esta función.')
+        } else if (isIOS) {
+            alertStore.error('❌ Las notificaciones en iOS Safari están limitadas. Usa la opción "Añadir a pantalla de inicio" para una mejor experiencia.')
+        } else {
+            alertStore.error('❌ Tu navegador no soporta notificaciones web.')
+        }
         return
     }
     
@@ -1635,28 +1641,37 @@ const sendReminder = async (userId, amount) => {
             amount: amount,
             userName: userName
         },
-        actions: [
-            {
-                action: 'view-balances',
-                title: 'Ver balances'
-            },
-            {
-                action: 'dismiss',
-                title: 'Cerrar'
-            }
-        ],
-        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+        // En iOS, las acciones pueden no funcionar
+        ...(isIOS ? {} : {
+            actions: [
+                {
+                    action: 'view-balances',
+                    title: 'Ver balances'
+                },
+                {
+                    action: 'dismiss',
+                    title: 'Cerrar'
+                }
+            ]
+        }),
+        requireInteraction: !isIOS // En iOS, mejor que se auto-cierren
     })
     
     alertStore.success(`✅ Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
-    debug('sendReminder', { userId, amount, userName })
+    debug('sendReminder', { userId, amount, userName, isIOS, isIOSSafari })
 }
 
 // Función para probar notificaciones
 const testNotification = async () => {
     // Verificar si las notificaciones están habilitadas
-    if (!process.client || !('Notification' in window)) {
-        alertStore.error('❌ Tu navegador no soporta notificaciones')
+    if (!hasNotificationSupport) {
+        if (isIOS && !isIOSSafari) {
+            alertStore.error('❌ En iOS, las notificaciones solo funcionan en Safari. Abre esta página en Safari para usar esta función.')
+        } else if (isIOS) {
+            alertStore.warning('⚠️ Las notificaciones en iOS Safari están limitadas. Considera añadir esta página a tu pantalla de inicio para una mejor experiencia.')
+        } else {
+            alertStore.error('❌ Tu navegador no soporta notificaciones web.')
+        }
         return
     }
     
@@ -1672,7 +1687,9 @@ const testNotification = async () => {
     
     // Enviar notificación de prueba
     sendNotification(`🔔 Notificación de prueba`, {
-        body: `¡Las notificaciones están funcionando correctamente! Ahora puedes enviar recordatorios de pago.`,
+        body: isIOS ? 
+            `¡Las notificaciones funcionan en Safari iOS! Nota: las funciones avanzadas están limitadas.` :
+            `¡Las notificaciones están funcionando correctamente! Ahora puedes enviar recordatorios de pago.`,
         icon: '/icons/icon-192x192.svg',
         badge: '/icons/icon-96x96.svg',
         tag: `test-notification-${Date.now()}`,
@@ -1680,21 +1697,26 @@ const testNotification = async () => {
             type: 'test-notification',
             timestamp: new Date().toISOString()
         },
-        actions: [
-            {
-                action: 'view-dashboard',
-                title: 'Ver Dashboard'
-            },
-            {
-                action: 'dismiss',
-                title: 'Cerrar'
-            }
-        ],
-        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+        // En iOS, las acciones pueden no funcionar
+        ...(isIOS ? {} : {
+            actions: [
+                {
+                    action: 'view-dashboard',
+                    title: 'Ver Dashboard'
+                },
+                {
+                    action: 'dismiss',
+                    title: 'Cerrar'
+                }
+            ]
+        }),
+        requireInteraction: !isIOS // En iOS, mejor que se auto-cierren
     })
     
-    alertStore.success(`✅ Notificación de prueba enviada correctamente`)
-    debug('testNotification', { permission: Notification.permission })
+    alertStore.success(isIOS ? 
+        `✅ Notificación enviada (funcionalidad limitada en iOS)` :
+        `✅ Notificación de prueba enviada correctamente`)
+    debug('testNotification', { permission: Notification.permission, isIOS, isIOSSafari })
 }
 
 // Funciones para el modal de permisos

@@ -336,7 +336,7 @@ const contextStore = useContextStore()
 const dineroStore = useDineroStore()
 
 // PWA Manager
-const { sendNotification, requestNotificationPermission } = usePWAManager()
+const { sendNotification, requestNotificationPermission, isIOS, isIOSSafari, hasNotificationSupport } = usePWAManager()
 
 // Reactive data
 const showNotificationModal = ref(false)
@@ -525,8 +525,14 @@ const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
     
     // Verificar si las notificaciones están habilitadas
-    if (!process.client || !('Notification' in window)) {
-        alertStore.error('❌ Tu navegador no soporta notificaciones')
+    if (!hasNotificationSupport) {
+        if (isIOS && !isIOSSafari) {
+            alertStore.error('❌ En iOS, las notificaciones solo funcionan en Safari. Abre esta página en Safari para usar esta función.')
+        } else if (isIOS) {
+            alertStore.error('❌ Las notificaciones en iOS Safari están limitadas. Usa la opción "Añadir a pantalla de inicio" para una mejor experiencia.')
+        } else {
+            alertStore.error('❌ Tu navegador no soporta notificaciones web.')
+        }
         return
     }
     
@@ -552,21 +558,24 @@ const sendReminder = async (userId, amount) => {
             amount: amount,
             userName: userName
         },
-        actions: [
-            {
-                action: 'view-balances',
-                title: 'Ver balances'
-            },
-            {
-                action: 'dismiss',
-                title: 'Cerrar'
-            }
-        ],
-        requireInteraction: true // Mantener la notificación hasta que el usuario interactúe
+        // En iOS, las acciones pueden no funcionar
+        ...(isIOS ? {} : {
+            actions: [
+                {
+                    action: 'view-balances',
+                    title: 'Ver balances'
+                },
+                {
+                    action: 'dismiss',
+                    title: 'Cerrar'
+                }
+            ]
+        }),
+        requireInteraction: !isIOS // En iOS, mejor que se auto-cierren
     })
     
     alertStore.success(`✅ Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
-    console.log('sendReminder', { userId, amount, userName })
+    console.log('sendReminder', { userId, amount, userName, isIOS, isIOSSafari })
 }
 
 const payDebt = async (creditorId, amount) => {
