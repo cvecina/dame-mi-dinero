@@ -69,91 +69,6 @@ export const usePWAManager = () => {
         }
     }
 
-    // Detectar iOS
-    const isIOS = () => {
-        if (!process.client) return false
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    }
-
-    // Detectar si es Safari en iOS
-    const isIOSSafari = () => {
-        if (!process.client) return false
-        const ua = navigator.userAgent
-        return isIOS() && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua)
-    }
-
-    // Verificar soporte real de notificaciones
-    const hasNotificationSupport = () => {
-        if (!process.client) return false
-        
-        // En iOS, solo Safari soporta notificaciones web de forma limitada
-        if (isIOS()) {
-            return isIOSSafari() && 'Notification' in window
-        }
-        
-        // En otros sistemas, verificar soporte estándar
-        return 'Notification' in window && 'serviceWorker' in navigator
-    }
-
-    // Solicitar permisos de notificación
-    const requestNotificationPermission = async () => {
-        if (!hasNotificationSupport()) {
-            return false
-        }
-
-        if (Notification.permission === 'granted') {
-            return true
-        }
-
-        if (Notification.permission !== 'denied') {
-            const permission = await Notification.requestPermission()
-            return permission === 'granted'
-        }
-
-        return false
-    }
-
-    // Enviar notificación local
-    const sendNotification = (title, options = {}) => {
-        if (!hasNotificationSupport()) {
-            console.warn('Notifications not supported in this browser/device')
-            return
-        }
-        
-        if (Notification.permission !== 'granted') {
-            console.warn('Notification permission not granted')
-            return
-        }
-
-        const defaultOptions = {
-            icon: '/icons/icon-192x192.svg',
-            badge: '/icons/icon-96x96.svg',
-            tag: 'dame-mi-dinero',
-            renotify: true,
-            silent: false,
-            // En iOS, las opciones avanzadas pueden no funcionar
-            ...(isIOS() ? {} : { vibrate: [200, 100, 200] }),
-            ...options
-        }
-
-        try {
-            const notification = new Notification(title, defaultOptions)
-            
-            // Auto-cerrar después de 10 segundos si no se especifica requireInteraction
-            // En iOS, esto es importante porque las notificaciones pueden quedarse indefinidamente
-            if (!options.requireInteraction) {
-                setTimeout(() => {
-                    notification.close()
-                }, isIOS() ? 5000 : 10000) // Más corto en iOS
-            }
-            
-            return notification
-        } catch (error) {
-            console.error('Error creating notification:', error)
-        }
-    }
-
     // Registrar service worker para notificaciones
     const registerSW = async () => {
         // No registrar SW personalizado - dejar que Vite PWA maneje todo
@@ -207,15 +122,8 @@ export const usePWAManager = () => {
         isOnlinePWA: isOnline,
         updateAvailable,
         
-        // Información del dispositivo
-        isIOS: isIOS(),
-        isIOSSafari: isIOSSafari(),
-        hasNotificationSupport: hasNotificationSupport(),
-        
         // Métodos
         installPWA,
-        requestNotificationPermission,
-        sendNotification,
         updateSW,
         init,
         handleShortcuts

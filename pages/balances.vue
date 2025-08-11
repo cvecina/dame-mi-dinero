@@ -308,13 +308,6 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Modal de permisos de notificación -->
-        <NotificationPermissionModal
-            :show="showNotificationModal"
-            @close="closeNotificationModal"
-            @request-permission="handleRequestPermission"
-        />
     </div>
 </template>
 
@@ -325,8 +318,6 @@ import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
-import { usePWAManager } from '~/composables/usePWAManager'
-import NotificationPermissionModal from '~/components/NotificationPermissionModal.vue'
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -334,12 +325,6 @@ const userStore = useUserStore()
 const alertStore = useAlertStore()
 const contextStore = useContextStore()
 const dineroStore = useDineroStore()
-
-// PWA Manager
-const { sendNotification, requestNotificationPermission, isIOS, isIOSSafari, hasNotificationSupport } = usePWAManager()
-
-// Reactive data
-const showNotificationModal = ref(false)
 
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
@@ -523,59 +508,8 @@ const formatMoney = (amount) => {
 
 const sendReminder = async (userId, amount) => {
     const userName = getUserName(userId)
-    
-    // Verificar si las notificaciones están habilitadas
-    if (!hasNotificationSupport) {
-        if (isIOS && !isIOSSafari) {
-            alertStore.error('❌ En iOS, las notificaciones solo funcionan en Safari. Abre esta página en Safari para usar esta función.')
-        } else if (isIOS) {
-            alertStore.error('❌ Las notificaciones en iOS Safari están limitadas. Usa la opción "Añadir a pantalla de inicio" para una mejor experiencia.')
-        } else {
-            alertStore.error('❌ Tu navegador no soporta notificaciones web.')
-        }
-        return
-    }
-    
-    if (Notification.permission === 'denied') {
-        alertStore.error('❌ Las notificaciones están bloqueadas. Habílitalas en la configuración del navegador.')
-        return
-    }
-    
-    if (Notification.permission !== 'granted') {
-        showNotificationModal.value = true
-        return
-    }
-    
-    // Enviar notificación
-    sendNotification(`💌 Recordatorio de pago`, {
-        body: `${userName} te debe ${formatMoney(amount)}. ¡Recuérdales que es hora de saldar!`,
-        icon: '/icons/icon-192x192.svg',
-        badge: '/icons/icon-96x96.svg',
-        tag: `reminder-${userId}-${Date.now()}`,
-        data: {
-            type: 'payment-reminder',
-            userId: userId,
-            amount: amount,
-            userName: userName
-        },
-        // En iOS, las acciones pueden no funcionar
-        ...(isIOS ? {} : {
-            actions: [
-                {
-                    action: 'view-balances',
-                    title: 'Ver balances'
-                },
-                {
-                    action: 'dismiss',
-                    title: 'Cerrar'
-                }
-            ]
-        }),
-        requireInteraction: !isIOS // En iOS, mejor que se auto-cierren
-    })
-    
-    alertStore.success(`✅ Recordatorio enviado a ${userName} por ${formatMoney(amount)}`)
-    console.log('sendReminder', { userId, amount, userName, isIOS, isIOSSafari })
+    alertStore.info(`📌 Recordatorio para ${userName} por ${formatMoney(amount)} - Puedes contactarlos directamente`)
+    console.log('sendReminder', { userId, amount, userName })
 }
 
 const payDebt = async (creditorId, amount) => {
@@ -650,22 +584,6 @@ watch(() => contextStore.getSelectedDineroId, async (newDineroId, oldDineroId) =
         // Los datos se actualizarán automáticamente a través de los computed
     }
 }, { immediate: true })
-
-// Funciones para el modal de permisos
-const handleRequestPermission = async () => {
-    const hasPermission = await requestNotificationPermission()
-    showNotificationModal.value = false
-    
-    if (hasPermission) {
-        alertStore.success('✅ ¡Notificaciones habilitadas correctamente!')
-    } else {
-        alertStore.error('❌ No se pudieron habilitar las notificaciones')
-    }
-}
-
-const closeNotificationModal = () => {
-    showNotificationModal.value = false
-}
 
 console.log('balances')
 </script>
