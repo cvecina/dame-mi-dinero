@@ -13,10 +13,10 @@
                 <span class="text-blanco-dividido font-bold text-lg">€</span>
               </div>
               <span class="text-lg sm:text-xl font-bold text-gris-billetera hidden sm:block"
-                >Dame mi dinero</span
+                >Mi Dinero</span
               >
               <span class="text-lg font-bold text-gris-billetera sm:hidden"
-                >DMD</span
+                >€MD</span
               >
             </NuxtLink>
           </div>
@@ -24,9 +24,16 @@
           <!-- Menú de navegación - Desktop -->
           <div class="hidden md:flex items-center space-x-6">
             <NuxtLink
-              to="/"
+              to="/home"
               class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
-              :class="{ 'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/' }"
+              :class="{ 'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/home' || $route.path === '/' }"
+            >
+              Inicio
+            </NuxtLink>
+            <NuxtLink
+              to="/dashboard"
+              class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
+              :class="{ 'text-azul-tiquet bg-azul-tiquet/10': $route.path === '/dashboard' }"
             >
               Dashboard
             </NuxtLink>
@@ -105,10 +112,18 @@
         >
           <div class="space-y-2">
             <NuxtLink
-              to="/"
+              to="/home"
               @click="showMobileMenu = false"
               class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
-              :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/' }"
+              :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/home' || $route.path === '/' }"
+            >
+              Inicio
+            </NuxtLink>
+            <NuxtLink
+              to="/dashboard"
+              @click="showMobileMenu = false"
+              class="block px-3 py-2 text-gris-billetera hover:text-azul-tiquet hover:bg-azul-claro-viaje/10 rounded-lg font-medium transition-colors"
+              :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/dashboard' }"
             >
               Dashboard
             </NuxtLink>

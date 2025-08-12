@@ -1,9 +1,38 @@
-# Nuxt Template
+# Dame mi dinero 💰
 
-Nuxt Template es una estructura para crear aplicaciones web de manera ágil que utiliza varias tecnologías y trae diferentes funcionalidades pre-diseñadas.
+**Dame mi dinero** es una aplicación web para gestionar gastos compartidos entre amigos de manera sencilla e intuitiva.
 
-## Características
-- **Componentes default**: El programa viene preparado con un login, registro, cambio de contraseña y con varios componentes útiles como tablas, formularios, buscadores...
+## 🚀 Nuevas Funcionalidades
+
+### Pantalla de Inicio Simple
+- **Pantalla principal limpia**: Vista simplificada con solo lo esencial
+- **Acciones rápidas**: Botones destacados para añadir gastos, gestionar presupuestos y ver balances
+- **Resumen visual**: Tarjetas con información clave (total gastado, balance personal, número de gastos)
+- **Gastos recientes**: Lista de los últimos 3 gastos registrados
+- **Situación financiera**: Resumen rápido de deudas pendientes
+
+### Dashboard Completo
+- **Vista avanzada**: Dashboard completo con todas las funcionalidades
+- **Smart Analytics**: Análisis inteligente con insights y predicciones
+- **Paneles configurables**: Posibilidad de mostrar/ocultar paneles según necesidades
+- **Alertas inteligentes**: Notificaciones sobre gastos altos, presupuestos excedidos, etc.
+- **Exportación**: Herramientas para exportar datos en CSV y generar reportes PDF
+
+### Navegación Mejorada
+- **Inicio**: Pantalla simple y cómoda para el día a día
+- **Dashboard**: Vista completa para análisis detallados
+- **Navegación intuitiva**: Fácil cambio entre vistas según las necesidades
+
+## 💡 Filosofía de Diseño
+
+La aplicación ahora sigue un enfoque de **complejidad progresiva**:
+
+1. **Pantalla de Inicio**: Para uso diario rápido y sencillo
+2. **Dashboard Completo**: Para análisis detallados y gestión avanzada
+
+Esto elimina la sensación de abrumamiento mientras mantiene todas las funcionalidades avanzadas disponibles cuando se necesiten.
+
+## 🛠️ Tecnologías
 
 ## Ejemplo de uso Formulario dinámico
 Hay props obligatorios:
