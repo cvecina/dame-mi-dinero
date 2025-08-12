@@ -121,34 +121,8 @@
         </div>
       </div>
 
-      <!-- Análisis Temporal y Predicciones -->
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <!-- Patrones Temporales -->
-        <div class="bg-blanco-dividido border border-azul-claro-viaje/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
-          <div class="flex items-center mb-6">
-            <div class="w-10 h-10 bg-lima-compartida/10 rounded-xl flex items-center justify-center mr-3">
-              <span class="text-xl">📅</span>
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-gris-billetera">Patrones Temporales</h3>
-              <p class="text-sm text-gray-600">Análisis de días y horarios de gasto</p>
-            </div>
-          </div>
-          <div v-if="(weeklyPatterns?.weeklyData || []).length > 0" class="chart-container" style="height: 280px; position: relative;">
-            <ExpenseChart
-              :data="weeklyChartData"
-              :options="chartOptions.bar"
-              type="bar"
-              style="height: 100%; width: 100%;"
-            />
-          </div>
-          <div v-else class="text-center py-12 text-gray-500">
-            <div class="text-4xl mb-3">⏳</div>
-            <div class="font-medium text-gris-billetera">Analizando patrones...</div>
-            <div class="text-sm">Se necesitan más datos para el análisis temporal</div>
-          </div>
-        </div>
-
+      <!-- Panel de Tendencias -->
+      <div class="grid grid-cols-1 gap-6">
         <!-- Panel de Tendencias -->
         <div class="bg-blanco-dividido border border-azul-claro-viaje/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-200">
           <div class="flex items-center mb-6">
@@ -184,18 +158,6 @@
               </div>
               <div class="text-xs text-gray-600">
                 {{ analytics?.averageDaily > 30 ? '⚠️ Ritmo elevado - considera reducir gastos' : '✅ Ritmo controlado - buen trabajo' }}
-              </div>
-            </div>
-
-            <div v-if="weeklyPatterns?.weeklyData && weeklyPatterns.weeklyData.length > 0" class="p-4 bg-gradient-to-r from-marfil-mapamundi to-azul-claro-viaje/10 rounded-xl border border-azul-claro-viaje/20">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-medium text-gris-billetera">Día de mayor gasto</span>
-                <span class="text-lg font-bold text-azul-tiquet">
-                  {{ getBiggestSpendingDay() }}
-                </span>
-              </div>
-              <div class="text-xs text-gray-600">
-                Promedio: €{{ getBiggestSpendingDayAmount().toFixed(2) }}
               </div>
             </div>
 
@@ -304,7 +266,6 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import ExpenseChart from './ExpenseChart.vue'
 
 const props = defineProps({
   expenses: {
@@ -327,9 +288,6 @@ const analytics = ref({
 const prediction = ref({
   predictedTotal: 0,
   confidence: 'low'
-})
-const weeklyPatterns = ref({
-  weeklyData: []
 })
 const unusualExpenses = ref([])
 const recommendations = ref([])
@@ -411,31 +369,6 @@ const predictMonthlySpending = (expenses) => {
   return { predictedTotal, confidence }
 }
 
-const analyzeWeeklyPatterns = (expenses) => {
-  if (!expenses || expenses.length === 0) {
-    return { weeklyData: [] }
-  }
-
-  const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-  const weeklyTotals = Array(7).fill(0)
-  const weeklyCounts = Array(7).fill(0)
-
-  expenses.forEach(expense => {
-    const dayOfWeek = new Date(expense.date).getDay()
-    weeklyTotals[dayOfWeek] += expense.amount || 0
-    weeklyCounts[dayOfWeek] += 1
-  })
-
-  const weeklyData = daysOfWeek.map((day, index) => ({
-    day,
-    average: weeklyCounts[index] > 0 ? weeklyTotals[index] / weeklyCounts[index] : 0,
-    total: weeklyTotals[index],
-    count: weeklyCounts[index]
-  }))
-
-  return { weeklyData }
-}
-
 const detectUnusualExpenses = (expenses) => {
   if (!expenses || expenses.length === 0) return []
 
@@ -514,7 +447,6 @@ const generateInsights = (expenses) => {
   }
 
   const analytics = analyzeSpendingPatterns(expenses)
-  const weeklyData = analyzeWeeklyPatterns(expenses).weeklyData
   
   // Insight sobre proyección
   if (analytics.averageDaily > 0) {
@@ -526,20 +458,6 @@ const generateInsights = (expenses) => {
         type: 'warning',
         title: 'Proyección elevada',
         message: `Al ritmo actual, podrías gastar €${projectedRemaining.toFixed(2)} más este mes.`
-      })
-    }
-  }
-
-  // Insight sobre patrones semanales
-  if (weeklyData.length > 0) {
-    const maxDay = weeklyData.reduce((max, day) => day.average > max.average ? day : max)
-    const minDay = weeklyData.reduce((min, day) => day.average < min.average ? day : min)
-    
-    if (maxDay.average > minDay.average * 2) {
-      insights.push({
-        type: 'info',
-        title: 'Patrón semanal marcado',
-        message: `Gastas significativamente más los ${maxDay.day}s (€${maxDay.average.toFixed(2)}) que los ${minDay.day}s.`
       })
     }
   }
@@ -556,6 +474,8 @@ const generateInsights = (expenses) => {
   return insights
 }
 
+// Métodos
+
 // Funciones auxiliares para el template
 const getBiggestSpendingDay = () => {
   if (!weeklyPatterns.value?.weeklyData || weeklyPatterns.value.weeklyData.length === 0) return 'N/A'
@@ -567,6 +487,103 @@ const getBiggestSpendingDayAmount = () => {
   if (!weeklyPatterns.value?.weeklyData || weeklyPatterns.value.weeklyData.length === 0) return 0
   const maxDay = weeklyPatterns.value.weeklyData.reduce((max, day) => day.average > max.average ? day : max)
   return maxDay.average
+}
+
+// Función para crear/actualizar el gráfico semanal
+const createWeeklyChart = async () => {
+  await nextTick()
+  
+  if (!weeklyChart.value || !weeklyPatterns.value?.weeklyData?.length) return
+  
+  // Destruir gráfico existente
+  if (chartInstance) {
+    chartInstance.destroy()
+    chartInstance = null
+  }
+  
+  const ctx = weeklyChart.value.getContext('2d')
+  
+  chartInstance = new ChartJS(ctx, {
+    type: 'bar',
+    data: {
+      labels: weeklyPatterns.value.weeklyData.map(day => day.day.slice(0, 3)),
+      datasets: [{
+        label: 'Gasto promedio (€)',
+        data: weeklyPatterns.value.weeklyData.map(day => day.average),
+        backgroundColor: 'rgba(58, 124, 165, 0.3)',
+        borderColor: '#3A7CA5',
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 10,
+          bottom: 10,
+          left: 10,
+          right: 10
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(169, 214, 229, 0.3)',
+            lineWidth: 1
+          },
+          ticks: {
+            color: '#3C3C3C',
+            font: {
+              size: 11,
+              weight: '500'
+            },
+            callback: function(value) {
+              return '€' + value.toFixed(0)
+            }
+          }
+        },
+        x: {
+          grid: {
+            color: 'rgba(246, 245, 242, 0.5)'
+          },
+          ticks: {
+            color: '#3C3C3C',
+            font: {
+              size: 11,
+              weight: '500'
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#3C3C3C',
+          titleColor: '#FFFFFF',
+          bodyColor: '#FFFFFF',
+          cornerRadius: 8,
+          padding: 12,
+          callbacks: {
+            label: function(context) {
+              return `€${context.parsed.y.toFixed(2)}`
+            }
+          }
+        }
+      },
+      animation: {
+        duration: 800,
+        easing: 'easeInOutQuart'
+      }
+    }
+  })
+  
+  console.log('createWeeklyChart')
 }
 
 // Datos para gráficos
@@ -645,7 +662,6 @@ const refreshData = async () => {
     
     analytics.value = analyzeSpendingPatterns(props.expenses)
     prediction.value = predictMonthlySpending(props.expenses)
-    weeklyPatterns.value = analyzeWeeklyPatterns(props.expenses)
     unusualExpenses.value = detectUnusualExpenses(props.expenses)
     recommendations.value = generateSavingRecommendations(props.expenses, props.budgets)
     insights.value = generateInsights(props.expenses)
@@ -662,7 +678,6 @@ const exportData = () => {
   const exportData = {
     analytics: analytics.value,
     prediction: prediction.value,
-    weeklyPatterns: weeklyPatterns.value,
     unusualExpenses: unusualExpenses.value,
     recommendations: recommendations.value,
     insights: insights.value,

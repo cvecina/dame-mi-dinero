@@ -83,14 +83,6 @@
                     <!-- Botones de acción -->
                     <div class="flex flex-wrap gap-3">
                         <button 
-                            @click="showAnalytics = !showAnalytics"
-                            class="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-bold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border border-indigo-300"
-                        >
-                            <span class="text-lg">📈</span>
-                            {{ showAnalytics ? '👁️ Ocultar' : '🔍 Ver' }} Analytics
-                            <span v-if="!showAnalytics" class="bg-white/20 px-2 py-1 rounded-full text-xs">NUEVO</span>
-                        </button>
-                        <button 
                             @click="showBudgetModal = true"
                             class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                         >
@@ -117,20 +109,16 @@
                 </div>
             </div>
 
-            <!-- Analytics Dashboard -->
-            <div v-if="showAnalytics" class="mb-8">
-                <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 border-2 border-indigo-200 rounded-3xl p-1 shadow-xl">
-                    <div class="bg-white rounded-2xl p-2">
-                        <AnalyticsDashboard 
-                            :expenses="expenses" 
-                            :budgets="activeBudgets"
-                        />
-                    </div>
-                </div>
-            </div>
-
             <!-- Contenedor dinámico para paneles reordenables -->
             <div class="flex flex-col">
+                <!-- Panel de Smart Analytics -->
+                <div v-if="isPanelVisible('analytics')" class="mb-8" :style="{ order: getPanelOrder('analytics') }">
+                    <AnalyticsDashboard 
+                        :expenses="expenses" 
+                        :budgets="activeBudgets"
+                    />
+                </div>
+
                 <!-- Panel de alertas -->
                 <div v-if="hasAlerts && isPanelVisible('alerts')" class="mb-8" :style="{ order: getPanelOrder('alerts') }">
                     <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400 shadow-lg">
@@ -821,25 +809,64 @@
                             <div 
                                 v-for="debt in peopleWhoOweMe" 
                                 :key="debt.userId"
-                                class="flex items-center justify-between p-3 bg-lima-compartida/10 rounded-lg border border-lima-compartida/20"
+                                class="bg-lima-compartida/10 rounded-lg border border-lima-compartida/20 overflow-hidden"
                             >
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-semibold text-sm">
-                                        {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                <!-- Fila principal de la deuda -->
+                                <div class="flex items-center justify-between p-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-semibold text-sm">
+                                            {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
+                                            <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
-                                        <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-right">
+                                            <p class="font-bold text-lima-compartida">{{ formatMoney(debt.amount) }}</p>
+                                            <button 
+                                                @click="sendReminder(debt.userId, debt.amount)"
+                                                class="text-xs text-azul-tiquet hover:text-azul-claro-viaje transition-colors"
+                                            >
+                                                Recordar
+                                            </button>
+                                        </div>
+                                        <button 
+                                            @click="toggleBalanceDetails(debt.userId)"
+                                            class="p-1 text-gray-500 hover:text-gris-billetera transition-colors"
+                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId) }"
+                                        >
+                                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-lima-compartida">{{ formatMoney(debt.amount) }}</p>
-                                    <button 
-                                        @click="sendReminder(debt.userId, debt.amount)"
-                                        class="text-xs text-azul-tiquet hover:text-azul-claro-viaje transition-colors"
-                                    >
-                                        Recordar
-                                    </button>
+                                
+                                <!-- Desglose de gastos expandido -->
+                                <div v-if="isBalanceExpanded(debt.userId)" class="bg-lima-compartida/5 border-t border-lima-compartida/20 p-3">
+                                    <h4 class="text-sm font-medium text-gris-billetera mb-2">Desglose de gastos:</h4>
+                                    <div class="space-y-2">
+                                        <div 
+                                            v-for="expense in debt.expenses" 
+                                            :key="expense.id"
+                                            class="flex items-center justify-between p-2 bg-blanco-dividido rounded-lg border border-lima-compartida/10"
+                                        >
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-sm text-gris-billetera truncate">{{ expense.title || expense.description }}</p>
+                                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                                    <span>{{ formatDate(expense.date) }}</span>
+                                                    <span>•</span>
+                                                    <span>{{ expense.category || 'Sin categoría' }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right ml-2">
+                                                <p class="font-bold text-lima-compartida text-sm">{{ formatMoney(getExpensesSplit(expense, debt.userId)) }}</p>
+                                                <p class="text-xs text-gray-500">de {{ formatMoney(expense.amount) }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -854,25 +881,66 @@
                             <div 
                                 v-for="debt in peopleIOwe" 
                                 :key="debt.userId"
-                                class="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
+                                class="bg-red-50 rounded-lg border border-red-200 overflow-hidden"
                             >
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-semibold text-sm">
-                                        {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                <!-- Fila principal de la deuda -->
+                                <div class="flex items-center justify-between p-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-semibold text-sm">
+                                            {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
+                                            <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
-                                        <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-right">
+                                            <p class="font-bold text-red-600">{{ formatMoney(debt.amount) }}</p>
+                                            <button 
+                                                @click="payDebt(debt.userId, debt.amount)"
+                                                class="text-xs bg-lima-compartida text-gris-billetera px-2 py-1 rounded hover:bg-azul-claro-viaje transition-colors"
+                                            >
+                                                Pagar
+                                            </button>
+                                        </div>
+                                        <button 
+                                            @click="toggleBalanceDetails(debt.userId)"
+                                            class="p-1 text-gray-500 hover:text-gris-billetera transition-colors"
+                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId) }"
+                                        >
+                                            <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-red-600">{{ formatMoney(debt.amount) }}</p>
-                                    <button 
-                                        @click="payDebt(debt.userId, debt.amount)"
-                                        class="text-xs bg-lima-compartida text-gris-billetera px-2 py-1 rounded hover:bg-azul-claro-viaje transition-colors"
-                                    >
-                                        Pagar
-                                    </button>
+                                
+                                <!-- Desglose de gastos expandido -->
+                                <div v-if="isBalanceExpanded(debt.userId)" class="bg-red-25 border-t border-red-200 p-3">
+                                    <h4 class="text-sm font-medium text-gris-billetera mb-2">Desglose de gastos:</h4>
+                                    <div class="space-y-2">
+                                        <div 
+                                            v-for="expense in debt.expenses" 
+                                            :key="expense.id"
+                                            class="flex items-center justify-between p-2 bg-blanco-dividido rounded-lg border border-red-100"
+                                        >
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-medium text-sm text-gris-billetera truncate">{{ expense.title || expense.description }}</p>
+                                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                                    <span>{{ formatDate(expense.date) }}</span>
+                                                    <span>•</span>
+                                                    <span>{{ expense.category || 'Sin categoría' }}</span>
+                                                    <span>•</span>
+                                                    <span>Pagado por {{ getUserName(expense.paidBy) }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right ml-2">
+                                                <p class="font-bold text-red-600 text-sm">{{ formatMoney(getExpensesSplit(expense, currentUser.id)) }}</p>
+                                                <p class="text-xs text-gray-500">de {{ formatMoney(expense.amount) }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1019,18 +1087,26 @@ const budgetStore = useBudgetStore()
 // Reactive data
 const showSplitExpenseModal = ref(false)
 const showBudgetModal = ref(false)
-const showAnalytics = ref(true) // Mostrar analytics por defecto
 const selectedPeriod = ref('month') // week, month, year, all
+const expandedBalanceDetails = ref(new Set()) // Para controlar qué detalles están expandidos
 
 // Panel configuration
 const showPanelConfig = ref(false)
 const dashboardPanels = ref([
     { 
+        id: 'analytics', 
+        name: 'Smart Analytics', 
+        icon: '🧠', 
+        visible: true, 
+        order: 1,
+        description: 'Insights inteligentes y análisis predictivo de tus gastos'
+    },
+    { 
         id: 'alerts', 
         name: 'Alertas importantes', 
         icon: '⚠️', 
         visible: true, 
-        order: 1,
+        order: 2,
         description: 'Notificaciones y avisos importantes'
     },
     { 
@@ -1038,7 +1114,7 @@ const dashboardPanels = ref([
         name: 'Resumen de balances', 
         icon: '💰', 
         visible: true, 
-        order: 2,
+        order: 3,
         description: 'Total gastado, tu balance y estadísticas del período'
     },
     { 
@@ -1046,7 +1122,7 @@ const dashboardPanels = ref([
         name: 'Presupuestos activos', 
         icon: '💼', 
         visible: true, 
-        order: 3,
+        order: 4,
         description: 'Control de gastos por categoría'
     },
     { 
@@ -1054,7 +1130,7 @@ const dashboardPanels = ref([
         name: 'Gastos por categoría', 
         icon: '📊', 
         visible: true, 
-        order: 4,
+        order: 5,
         description: 'Análisis detallado de gastos organizados por categorías con gráficos'
     },
     { 
@@ -1062,7 +1138,7 @@ const dashboardPanels = ref([
         name: 'Gastos recientes', 
         icon: '💸', 
         visible: true, 
-        order: 5,
+        order: 6,
         description: 'Últimos movimientos registrados'
     },
     { 
@@ -1070,7 +1146,7 @@ const dashboardPanels = ref([
         name: 'Pagos pendientes', 
         icon: '⏰', 
         visible: true, 
-        order: 6,
+        order: 7,
         description: 'Gastos por saldar'
     },
     { 
@@ -1078,7 +1154,7 @@ const dashboardPanels = ref([
         name: 'Mi situación financiera', 
         icon: '👥', 
         visible: true, 
-        order: 7,
+        order: 8,
         description: 'Detalles de quién te debe y a quién debes dinero'
     }
 ])
@@ -1517,6 +1593,26 @@ const formatDate = (date) => {
         month: 'short',
         year: 'numeric'
     })
+}
+
+// Funciones para manejar desglose de balances
+const toggleBalanceDetails = (userId) => {
+    const key = `balance_${userId}`
+    if (expandedBalanceDetails.value.has(key)) {
+        expandedBalanceDetails.value.delete(key)
+    } else {
+        expandedBalanceDetails.value.add(key)
+    }
+    expandedBalanceDetails.value = new Set(expandedBalanceDetails.value)
+}
+
+const isBalanceExpanded = (userId) => {
+    return expandedBalanceDetails.value.has(`balance_${userId}`)
+}
+
+const getExpensesSplit = (expense, forUserId) => {
+    const split = expense.splits?.find(s => parseInt(s.userId) === forUserId)
+    return split ? parseFloat(split.amount) : 0
 }
 
 const getExpensesByPeriod = () => {
