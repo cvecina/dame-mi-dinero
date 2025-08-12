@@ -833,9 +833,9 @@
                                             </button>
                                         </div>
                                         <button 
-                                            @click="toggleBalanceDetails(debt.userId)"
+                                            @click="toggleBalanceDetails(debt.userId, 'owe_me')"
                                             class="p-1 text-gray-500 hover:text-gris-billetera transition-colors"
-                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId) }"
+                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId, 'owe_me') }"
                                         >
                                             <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -845,7 +845,7 @@
                                 </div>
                                 
                                 <!-- Desglose de gastos expandido -->
-                                <div v-if="isBalanceExpanded(debt.userId)" class="bg-lima-compartida/5 border-t border-lima-compartida/20 p-3">
+                                <div v-if="isBalanceExpanded(debt.userId, 'owe_me')" class="bg-lima-compartida/5 border-t border-lima-compartida/20 p-3">
                                     <h4 class="text-sm font-medium text-gris-billetera mb-2">Desglose de gastos:</h4>
                                     <div class="space-y-2">
                                         <div 
@@ -905,9 +905,9 @@
                                             </button>
                                         </div>
                                         <button 
-                                            @click="toggleBalanceDetails(debt.userId)"
+                                            @click="toggleBalanceDetails(debt.userId, 'i_owe')"
                                             class="p-1 text-gray-500 hover:text-gris-billetera transition-colors"
-                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId) }"
+                                            :class="{ 'rotate-180': isBalanceExpanded(debt.userId, 'i_owe') }"
                                         >
                                             <svg class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -917,7 +917,7 @@
                                 </div>
                                 
                                 <!-- Desglose de gastos expandido -->
-                                <div v-if="isBalanceExpanded(debt.userId)" class="bg-red-25 border-t border-red-200 p-3">
+                                <div v-if="isBalanceExpanded(debt.userId, 'i_owe')" class="bg-red-25 border-t border-red-200 p-3">
                                     <h4 class="text-sm font-medium text-gris-billetera mb-2">Desglose de gastos:</h4>
                                     <div class="space-y-2">
                                         <div 
@@ -1596,8 +1596,8 @@ const formatDate = (date) => {
 }
 
 // Funciones para manejar desglose de balances
-const toggleBalanceDetails = (userId) => {
-    const key = `balance_${userId}`
+const toggleBalanceDetails = (userId, type = 'owe_me') => {
+    const key = `balance_${type}_${userId}`
     if (expandedBalanceDetails.value.has(key)) {
         expandedBalanceDetails.value.delete(key)
     } else {
@@ -1606,8 +1606,8 @@ const toggleBalanceDetails = (userId) => {
     expandedBalanceDetails.value = new Set(expandedBalanceDetails.value)
 }
 
-const isBalanceExpanded = (userId) => {
-    return expandedBalanceDetails.value.has(`balance_${userId}`)
+const isBalanceExpanded = (userId, type = 'owe_me') => {
+    return expandedBalanceDetails.value.has(`balance_${type}_${userId}`)
 }
 
 const getExpensesSplit = (expense, forUserId) => {
