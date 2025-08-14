@@ -318,6 +318,7 @@ import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
+import { useScrollPosition } from '~/composables/useScrollPosition'
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -325,6 +326,7 @@ const userStore = useUserStore()
 const alertStore = useAlertStore()
 const contextStore = useContextStore()
 const dineroStore = useDineroStore()
+const { preserveScrollPosition } = useScrollPosition()
 
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
@@ -513,36 +515,38 @@ const sendReminder = async (userId, amount) => {
 }
 
 const payDebt = async (creditorId, amount) => {
-    const creditorName = getUserName(creditorId)
-    
-    // Buscar todos los gastos donde debo dinero a esta persona
-    const selectedDineroId = contextStore.getSelectedDineroId
-    if (!selectedDineroId) return
-    
-    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
-    const expensesToPay = []
-    
-    expensesByDinero.forEach(expense => {
-        if (expense.paidBy === creditorId && expense.participants?.includes(currentUser.value.id)) {
-            const hasPaid = expense.payments && expense.payments[currentUser.value.id]
-            if (!hasPaid) {
-                expensesToPay.push(expense.id)
+    await preserveScrollPosition(async () => {
+        const creditorName = getUserName(creditorId)
+        
+        // Buscar todos los gastos donde debo dinero a esta persona
+        const selectedDineroId = contextStore.getSelectedDineroId
+        if (!selectedDineroId) return
+        
+        const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+        const expensesToPay = []
+        
+        expensesByDinero.forEach(expense => {
+            if (expense.paidBy === creditorId && expense.participants?.includes(currentUser.value.id)) {
+                const hasPaid = expense.payments && expense.payments[currentUser.value.id]
+                if (!hasPaid) {
+                    expensesToPay.push(expense.id)
+                }
             }
+        })
+        
+        try {
+            // Marcar todos los gastos relevantes como pagados
+            for (const expenseId of expensesToPay) {
+                await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
+            }
+            
+            alertStore.success(`Has pagado ${formatMoney(amount)} a ${creditorName}`)
+            console.log('payDebt', { creditorId, amount, creditorName, expensesCount: expensesToPay.length })
+        } catch (error) {
+            alertStore.error('Error al procesar el pago')
+            console.error('Error paying debt:', error)
         }
     })
-    
-    try {
-        // Marcar todos los gastos relevantes como pagados
-        for (const expenseId of expensesToPay) {
-            await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
-        }
-        
-        alertStore.success(`Has pagado ${formatMoney(amount)} a ${creditorName}`)
-        console.log('payDebt', { creditorId, amount, creditorName, expensesCount: expensesToPay.length })
-    } catch (error) {
-        alertStore.error('Error al procesar el pago')
-        console.error('Error paying debt:', error)
-    }
 }
 
 // Cargar datos al montar el componente

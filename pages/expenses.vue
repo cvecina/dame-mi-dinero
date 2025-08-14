@@ -256,6 +256,7 @@ import { useUserStore } from '~/stores/user.store'
 import { useAlertStore } from '~/stores/alert.store'
 import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
+import { useScrollPosition } from '~/composables/useScrollPosition'
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -263,6 +264,7 @@ const userStore = useUserStore()
 const alertStore = useAlertStore()
 const contextStore = useContextStore()
 const dineroStore = useDineroStore()
+const { preserveScrollPosition } = useScrollPosition()
 
 // Reactive data
 const showSplitExpenseModal = ref(false)
@@ -367,20 +369,22 @@ const deleteExpense = async (expenseId) => {
 }
 
 const togglePaymentStatus = async (expenseId, userId) => {
-    try {
-        const currentStatus = expenseStore.getUserPaymentStatus(expenseId, userId)
-        await expenseStore.markUserPayment(expenseId, userId, !currentStatus)
-        
-        const userName = getUserName(userId)
-        if (!currentStatus) {
-            alertStore.success(`${userName} marcado como pagado`)
-        } else {
-            alertStore.info(`Pago de ${userName} desmarcado`)
+    await preserveScrollPosition(async () => {
+        try {
+            const currentStatus = expenseStore.getUserPaymentStatus(expenseId, userId)
+            await expenseStore.markUserPayment(expenseId, userId, !currentStatus)
+            
+            const userName = getUserName(userId)
+            if (!currentStatus) {
+                alertStore.success(`${userName} marcado como pagado`)
+            } else {
+                alertStore.info(`Pago de ${userName} desmarcado`)
+            }
+        } catch (error) {
+            console.error('Error al marcar pago:', error)
+            alertStore.error('Error al actualizar estado de pago: ' + (error.message || 'Error desconocido'))
         }
-    } catch (error) {
-        console.error('Error al marcar pago:', error)
-        alertStore.error('Error al actualizar estado de pago: ' + (error.message || 'Error desconocido'))
-    }
+    })
 }
 
 const getUserPaymentStatus = (expenseId, userId) => {

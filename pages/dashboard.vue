@@ -1047,7 +1047,7 @@
                                 Restaurar
                             </button>
                             <button 
-                                @click="savePanelSettings"
+                                @click="savePanelConfig"
                                 class="flex-1 px-4 py-3 bg-azul-tiquet text-blanco-dividido rounded-xl font-semibold hover:bg-azul-claro-viaje transition-colors"
                             >
                                 Guardar
@@ -1071,10 +1071,14 @@ import { useBudgetStore } from '~/stores/budget.store'
 import formatearTotal from '~/utils/formatMoney'
 import { useLogger } from '~/composables/useLogger'
 import { usePWAManager } from '~/composables/usePWAManager'
+import { useScrollPosition } from '~/composables/useScrollPosition'
+import { useDashboardConfig } from '~/composables/useDashboardConfig'
 import AnalyticsDashboard from '~/components/AnalyticsDashboard.vue'
 
 const { debug, log, error } = useLogger()
 const { } = usePWAManager()
+const { preserveScrollPosition } = useScrollPosition()
+const { dashboardPanels, loadPanelSettings, savePanelSettings, movePanelUp, movePanelDown, togglePanelVisibility, resetToDefault } = useDashboardConfig()
 
 // Stores
 const expenseStore = useExpenseStore()
@@ -1092,72 +1096,6 @@ const expandedBalanceDetails = ref(new Set()) // Para controlar qué detalles es
 
 // Panel configuration
 const showPanelConfig = ref(false)
-const dashboardPanels = ref([
-    { 
-        id: 'analytics', 
-        name: 'Smart Analytics', 
-        icon: '🧠', 
-        visible: true, 
-        order: 1,
-        description: 'Insights inteligentes y análisis predictivo de tus gastos'
-    },
-    { 
-        id: 'alerts', 
-        name: 'Alertas importantes', 
-        icon: '⚠️', 
-        visible: true, 
-        order: 2,
-        description: 'Notificaciones y avisos importantes'
-    },
-    { 
-        id: 'summary', 
-        name: 'Resumen de balances', 
-        icon: '💰', 
-        visible: true, 
-        order: 3,
-        description: 'Total gastado, tu balance y estadísticas del período'
-    },
-    { 
-        id: 'budgets', 
-        name: 'Presupuestos activos', 
-        icon: '💼', 
-        visible: true, 
-        order: 4,
-        description: 'Control de gastos por categoría'
-    },
-    { 
-        id: 'categories', 
-        name: 'Gastos por categoría', 
-        icon: '📊', 
-        visible: true, 
-        order: 5,
-        description: 'Análisis detallado de gastos organizados por categorías con gráficos'
-    },
-    { 
-        id: 'recent', 
-        name: 'Gastos recientes', 
-        icon: '💸', 
-        visible: true, 
-        order: 6,
-        description: 'Últimos movimientos registrados'
-    },
-    { 
-        id: 'pending', 
-        name: 'Pagos pendientes', 
-        icon: '⏰', 
-        visible: true, 
-        order: 7,
-        description: 'Gastos por saldar'
-    },
-    { 
-        id: 'balance', 
-        name: 'Mi situación financiera', 
-        icon: '👥', 
-        visible: true, 
-        order: 8,
-        description: 'Detalles de quién te debe y a quién debes dinero'
-    }
-])
 
 // Computed properties
 const currentUser = computed(() => userStore.getCurrentUser)
@@ -1680,13 +1618,15 @@ const onExpenseAdded = async () => {
 const markPaymentAsPaid = async (expenseId) => {
     if (!currentUser.value) return
     
-    try {
-        await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
-        alertStore.success('Pago marcado como pagado')
-        debug('markPaymentAsPaid')
-    } catch (error) {
-        alertStore.error('Error al marcar el pago')
-    }
+    await preserveScrollPosition(async () => {
+        try {
+            await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
+            alertStore.success('Pago marcado como pagado')
+            debug('markPaymentAsPaid')
+        } catch (error) {
+            alertStore.error('Error al marcar el pago')
+        }
+    })
 }
 
 const sendReminder = async (userId, amount) => {
@@ -1696,36 +1636,38 @@ const sendReminder = async (userId, amount) => {
 }
 
 const payDebt = async (creditorId, amount) => {
-    const creditorName = getUserName(creditorId)
-    
-    // Buscar todos los gastos donde debo dinero a esta persona
-    const selectedDineroId = contextStore.getSelectedDineroId
-    if (!selectedDineroId) return
-    
-    const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
-    const expensesToPay = []
-    
-    expensesByDinero.forEach(expense => {
-        if (expense.paidBy === creditorId && expense.participants?.includes(currentUser.value.id)) {
-            const hasPaid = expense.payments && expense.payments[currentUser.value.id]
-            if (!hasPaid) {
-                expensesToPay.push(expense.id)
+    await preserveScrollPosition(async () => {
+        const creditorName = getUserName(creditorId)
+        
+        // Buscar todos los gastos donde debo dinero a esta persona
+        const selectedDineroId = contextStore.getSelectedDineroId
+        if (!selectedDineroId) return
+        
+        const expensesByDinero = expenseStore.getExpensesByDinero(selectedDineroId)
+        const expensesToPay = []
+        
+        expensesByDinero.forEach(expense => {
+            if (expense.paidBy === creditorId && expense.participants?.includes(currentUser.value.id)) {
+                const hasPaid = expense.payments && expense.payments[currentUser.value.id]
+                if (!hasPaid) {
+                    expensesToPay.push(expense.id)
+                }
             }
+        })
+        
+        try {
+            // Marcar todos los gastos relevantes como pagados
+            for (const expenseId of expensesToPay) {
+                await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
+            }
+            
+            alertStore.success(`Has pagado ${formatMoney(amount)} a ${creditorName}`)
+            console.log('payDebt', { creditorId, amount, creditorName, expensesCount: expensesToPay.length })
+        } catch (error) {
+            alertStore.error('Error al procesar el pago')
+            console.error('Error paying debt:', error)
         }
     })
-    
-    try {
-        // Marcar todos los gastos relevantes como pagados
-        for (const expenseId of expensesToPay) {
-            await expenseStore.markUserPayment(expenseId, currentUser.value.id, true)
-        }
-        
-        alertStore.success(`Has pagado ${formatMoney(amount)} a ${creditorName}`)
-        console.log('payDebt', { creditorId, amount, creditorName, expensesCount: expensesToPay.length })
-    } catch (error) {
-        alertStore.error('Error al procesar el pago')
-        console.error('Error paying debt:', error)
-    }
 }
 
 // Métodos para presupuestos
@@ -2170,29 +2112,14 @@ const handleAlertAction = (alert) => {
 }
 
 // Funciones para configuración de paneles
-const togglePanelVisibility = (panelId) => {
-    const panel = dashboardPanels.value.find(p => p.id === panelId)
-    if (panel) {
-        panel.visible = !panel.visible
-    }
-}
-
 const onPanelReorder = () => {
     // Actualizar el orden de los paneles después del drag & drop
     dashboardPanels.value.forEach((panel, index) => {
         panel.order = index + 1
     })
     
-    // Guardar la nueva configuración en localStorage
-    if (process.client) {
-        localStorage.setItem('dashboardPanelConfig', JSON.stringify(
-            dashboardPanels.value.map(panel => ({
-                id: panel.id,
-                visible: panel.visible,
-                order: panel.order
-            }))
-        ))
-    }
+    // Guardar usando el composable
+    savePanelSettings()
     
     alertStore.success('Orden de paneles actualizado')
 }
@@ -2203,16 +2130,8 @@ const activatePanel = (panelId) => {
         panel.visible = true
         alertStore.info(`Panel "${panel.name}" activado automáticamente`)
         
-        // Guardar la configuración actualizada
-        if (process.client) {
-            localStorage.setItem('dashboardPanelConfig', JSON.stringify(
-                dashboardPanels.value.map(panel => ({
-                    id: panel.id,
-                    visible: panel.visible,
-                    order: panel.order
-                }))
-            ))
-        }
+        // Guardar usando el composable
+        savePanelSettings()
     }
 }
 
@@ -2234,46 +2153,17 @@ const activatePanelForAlert = (alertAction) => {
 }
 
 const resetPanelSettings = () => {
-    dashboardPanels.value.forEach(panel => {
-        panel.visible = true
-    })
+    resetToDefault()
+    alertStore.success('Configuración restablecida a valores por defecto')
 }
 
-const savePanelSettings = () => {
-    // Guardar configuración en localStorage
-    if (process.client) {
-        localStorage.setItem('dashboardPanelConfig', JSON.stringify(
-            dashboardPanels.value.map(panel => ({
-                id: panel.id,
-                visible: panel.visible,
-                order: panel.order
-            }))
-        ))
-    }
+const savePanelConfig = () => {
+    // Usar la función del composable para guardar
+    savePanelSettings()
     
+    // Cerrar modal y mostrar mensaje
     showPanelConfig.value = false
     alertStore.success('Configuración guardada correctamente')
-}
-
-const loadPanelSettings = () => {
-    // Cargar configuración desde localStorage
-    if (process.client) {
-        const saved = localStorage.getItem('dashboardPanelConfig')
-        if (saved) {
-            try {
-                const savedConfig = JSON.parse(saved)
-                savedConfig.forEach(savedPanel => {
-                    const panel = dashboardPanels.value.find(p => p.id === savedPanel.id)
-                    if (panel) {
-                        panel.visible = savedPanel.visible
-                        panel.order = savedPanel.order
-                    }
-                })
-            } catch (error) {
-                console.error('Error loading panel configuration:', error)
-            }
-        }
-    }
 }
 
 // Cargar datos al montar el componente
