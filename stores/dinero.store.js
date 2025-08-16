@@ -5,10 +5,22 @@ export const useDineroStore = defineStore({
     state: () => ({
         dineros: [],
         loading: false
+        // Estructura: cada dinero tiene users: [id]
     }),
     
     getters: {
         getAllDineros: (state) => Array.isArray(state.dineros) ? state.dineros : [],
+        // Devuelve los usuarios asociados a un dinero
+        getDineroUsers: (state) => (dineroId) => {
+            const dinero = state.dineros.find(d => d.id === dineroId)
+            return dinero?.users || []
+        },
+        // Verifica si un usuario puede interactuar con un dinero
+        canUserInteract: (state) => (dineroId, userId) => {
+            const dinero = state.dineros.find(d => d.id === dineroId)
+            if (!dinero) return false
+            return Array.isArray(dinero.users) && dinero.users.includes(userId)
+        },
         
         getDineroById: (state) => (id) => {
             return state.dineros.find(dinero => dinero.id === id);
@@ -31,7 +43,13 @@ export const useDineroStore = defineStore({
             this.loading = true
             try {
                 const response = await $fetch('/api/dineros')
-                this.dineros = response.data || []
+                                // Asegura que siempre sea array y que cada dinero tenga users como array
+                                this.dineros = Array.isArray(response.data)
+                                    ? response.data.map(d => ({
+                                            ...d,
+                                            users: Array.isArray(d.users) ? d.users : []
+                                        }))
+                                    : []
                 
                 // Asegurar que existe un dinero por defecto
                 await this.ensureDefaultDinero()
@@ -47,6 +65,10 @@ export const useDineroStore = defineStore({
         },
         
         async addDinero(dineroData) {
+            // Asegura que users sea array
+            if (!Array.isArray(dineroData.users)) {
+                dineroData.users = []
+            }
             this.loading = true
             try {
                 const response = await $fetch('/api/dineros', {
@@ -70,11 +92,14 @@ export const useDineroStore = defineStore({
         async updateDinero(id, dineroData) {
             this.loading = true
             try {
+                // Asegura que users sea array
+                if (!Array.isArray(dineroData.users)) {
+                    dineroData.users = []
+                }
                 const response = await $fetch('/api/dineros', {
                     method: 'PUT',
                     body: { id, ...dineroData }
                 })
-                
                 const updatedDinero = response.data
                 const dineroIndex = this.dineros.findIndex(dinero => dinero.id === id)
                 if (dineroIndex !== -1) {
@@ -127,9 +152,9 @@ export const useDineroStore = defineStore({
                     description: "Contenedor por defecto para gastos sin dinero asignado",
                     isDefault: true,
                     color: "#3A7CA5", // Azul Tiquet
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    users: []
                 }
-                
                 await this.addDinero(defaultDineroData)
             }
         },
@@ -167,6 +192,22 @@ export const useDineroStore = defineStore({
             } catch (error) {
                 console.error('Error al inicializar dineros:', error)
             }
+        },
+        // Permite añadir/quitar usuarios de un dinero
+        async updateDineroUsers(dineroId, users) {
+            const dinero = this.getDineroById(dineroId)
+            if (!dinero) throw new Error('Dinero no encontrado')
+            await this.updateDinero(dineroId, { ...dinero, users })
+            console.log('updateDineroUsers')
+            return true
+        },
+        // Permite añadir/quitar usuarios de un dinero
+        async updateDineroUsers(dineroId, users) {
+            const dinero = this.getDineroById(dineroId)
+            if (!dinero) throw new Error('Dinero no encontrado')
+            await this.updateDinero(dineroId, { ...dinero, users })
+            console.log('updateDineroUsers')
+            return true
         }
     }
 });
