@@ -320,6 +320,10 @@ import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useScrollPosition } from '~/composables/useScrollPosition'
 
+definePageMeta({
+    layout: 'default',
+})
+
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
