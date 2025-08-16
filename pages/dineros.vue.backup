@@ -1,0 +1,548 @@
+<template>
+    <div class="min-h-screen bg-marfil-mapamundi p-3 sm:p-4 lg:p-6">
+        <!-- Loading state -->
+        <div v-if="loading" class="flex items-center justify-center py-20">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-azul-tiquet border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gris-billetera font-medium">Cargando dineros...</p>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div v-else class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-2xl p-6 text-blanco-dividido shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold mb-2">Dineros</h1>
+                            <p class="text-azul-claro-viaje/90 text-sm sm:text-base">
+                                Gestiona tus contenedores de gastos compartidos
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Propios</p>
+                                <p class="text-xl font-bold">{{ myDineros.length }}</p>
+                            </div>
+                            <div class="bg-blanco-dividido/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                                <p class="text-xs opacity-80">Compartidos</p>
+                                <p class="text-xl font-bold">{{ sharedDineros.length }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="bg-blanco-dividido rounded-2xl shadow-lg p-6 mb-8 border border-azul-claro-viaje/20">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <!-- Filter -->
+                        <div class="relative">
+                            <label class="text-sm font-semibold text-gris-billetera mb-2 flex items-center gap-2">
+                                <span class="text-azul-tiquet">💰</span>
+                                Filtrar dineros
+                            </label>
+                            <select 
+                                v-model="filterType"
+                                class="px-4 py-3 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje min-w-[200px]"
+                            >
+                                <option value="all">Todos los dineros</option>
+                                <option value="owned">Mis dineros</option>
+                                <option value="shared">Compartidos conmigo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex gap-3">
+                        <button
+                            @click="showDineroModal = true"
+                            class="bg-azul-tiquet hover:bg-azul-claro-viaje text-blanco-dividido px-6 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Nuevo Dinero
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dineros Grid -->
+            <div v-if="filteredDineros.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div 
+                    v-for="dinero in filteredDineros" 
+                    :key="dinero.id"
+                    class="bg-blanco-dividido rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden border border-gray-200"
+                >
+                    <!-- Dinero Header -->
+                    <div class="p-6 border-b border-gray-100" :style="{ borderTopColor: dinero.color, borderTopWidth: '4px' }">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div 
+                                    class="w-12 h-12 rounded-full flex items-center justify-center text-blanco-dividido font-bold text-lg shadow-md"
+                                    :style="{ backgroundColor: dinero.color }"
+                                >
+                                    {{ dinero.name.charAt(0).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-lg text-gris-billetera">{{ dinero.name }}</h3>
+                                    <p v-if="dinero.description" class="text-sm text-gray-600">{{ dinero.description }}</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Ownership Indicator -->
+                            <div class="flex items-center gap-2">
+                                <span v-if="dinero.isDefault" class="bg-lima-compartida text-blanco-dividido text-xs px-2 py-1 rounded-full font-medium">
+                                    Por defecto
+                                </span>
+                                <span v-if="isSharedDinero(dinero)" class="bg-azul-claro-viaje text-blanco-dividido text-xs px-2 py-1 rounded-full font-medium">
+                                    Compartido
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Shared With Info -->
+                        <div v-if="dinero.sharedWith && dinero.sharedWith.length > 0 && isMyDinero(dinero)" class="mb-4">
+                            <p class="text-xs text-gray-600 mb-2">Compartido con:</p>
+                            <div class="flex flex-wrap gap-1">
+                                <span 
+                                    v-for="userId in dinero.sharedWith.slice(0, 3)" 
+                                    :key="userId"
+                                    class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full"
+                                >
+                                    Usuario {{ userId }}
+                                </span>
+                                <span v-if="dinero.sharedWith.length > 3" class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                                    +{{ dinero.sharedWith.length - 3 }} más
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex gap-2">
+                            <button
+                                v-if="isMyDinero(dinero)"
+                                @click="editDinero(dinero)"
+                                class="flex-1 bg-azul-claro-viaje/10 hover:bg-azul-claro-viaje/20 text-azul-claro-viaje px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Editar
+                            </button>
+                            
+                            <button
+                                v-if="isMyDinero(dinero)"
+                                @click="openShareModal(dinero)"
+                                class="flex-1 bg-lima-compartida/10 hover:bg-lima-compartida/20 text-lima-compartida px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                </svg>
+                                Compartir
+                            </button>
+                            
+                            <button
+                                v-if="isMyDinero(dinero) && !dinero.isDefault"
+                                @click="deleteDinero(dinero.id)"
+                                class="bg-red-500/10 hover:bg-red-500/20 text-red-600 px-3 py-2 rounded-lg font-medium transition-colors text-sm"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="p-4 bg-gray-50">
+                        <div class="text-center">
+                            <p class="text-sm text-gray-600">
+                                <span v-if="isMyDinero(dinero)">Creado</span>
+                                <span v-else>Compartido</span>
+                                {{ formatDate(dinero.createdAt) }}
+                            </p>
+                            <p v-if="dinero.updatedAt !== dinero.createdAt" class="text-xs text-gray-500 mt-1">
+                                Actualizado {{ formatDate(dinero.updatedAt) }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else class="text-center py-20">
+                <div class="w-32 h-32 mx-auto mb-6 opacity-50">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-full h-full text-gray-400">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gris-billetera mb-2">
+                    <span v-if="filterType === 'owned'">No tienes dineros</span>
+                    <span v-else-if="filterType === 'shared'">No hay dineros compartidos contigo</span>
+                    <span v-else>No hay dineros disponibles</span>
+                </h3>
+                <p class="text-gray-600 mb-6">
+                    <span v-if="filterType === 'owned'">Crea tu primer dinero para empezar a gestionar gastos</span>
+                    <span v-else-if="filterType === 'shared'">Cuando alguien comparta un dinero contigo aparecerá aquí</span>
+                    <span v-else>Crea un dinero para empezar a gestionar gastos compartidos</span>
+                </p>
+                <button
+                    v-if="filterType !== 'shared'"
+                    @click="showDineroModal = true"
+                    class="bg-azul-tiquet hover:bg-azul-claro-viaje text-blanco-dividido px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                    Crear primer dinero
+                </button>
+            </div>
+
+            <!-- Error message -->
+            <div v-if="error" class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-red-700">{{ error }}</p>
+            </div>
+
+            <!-- Modals -->
+            <DineroModal 
+                v-if="showDineroModal"
+                :dinero="selectedDinero"
+                @close="closeDineroModal"
+                @saved="onDineroSaved"
+            />
+
+            <ShareDineroModal
+                v-if="showShareModal"
+                :is-open="showShareModal"
+                :dinero="selectedDinero"
+                @close="closeShareModal"
+                @shared="onDineroShared"
+                @unshared="onDineroUnshared"
+            />
+        </div>
+    </div>
+</template>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-end">
+                            <div class="bg-azul-claro-viaje/10 px-4 py-3 rounded-xl border border-azul-claro-viaje/30">
+                                <p class="text-xs text-gris-billetera font-medium">Dinero activo</p>
+                                <p class="text-sm font-bold text-azul-tiquet">{{ selectedDinero?.name || 'Todos' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="flex flex-wrap gap-3">
+                        <button 
+                            @click="showDineroModal = true"
+                            class="px-4 py-3 bg-gradient-to-r from-lima-compartida to-lima-compartida/80 text-gris-billetera text-sm font-semibold rounded-xl hover:from-lima-compartida/90 hover:to-lima-compartida/70 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                        >
+                            <span class="text-sm">+</span>
+                            Crear nuevo dinero
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de estadísticas -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                <!-- Total Dineros -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-tiquet/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-azul-tiquet/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">💰</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Total dineros</p>
+                            <p class="text-2xl font-bold text-azul-tiquet">{{ dineros.length }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-azul-tiquet to-azul-claro-viaje rounded-full"></div>
+                </div>
+                
+                <!-- Total Gastos -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-lima-compartida/10 rounded-2xl shadow-lg p-6 border border-lima-compartida/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-lima-compartida/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Total gastos</p>
+                            <p class="text-2xl font-bold text-lima-compartida">{{ totalExpenses }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-lima-compartida to-green-400 rounded-full"></div>
+                </div>
+                
+                <!-- Gasto promedio -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-azul-claro-viaje/10 rounded-2xl shadow-lg p-6 border border-azul-claro-viaje/10 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-azul-claro-viaje/10 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">📈</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Gasto promedio</p>
+                            <p class="text-2xl font-bold text-azul-claro-viaje">{{ formatMoney(totalExpenses > 0 ? getTotalAmount() / totalExpenses : 0) }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-azul-claro-viaje to-blue-400 rounded-full"></div>
+                </div>
+                
+                <!-- Dinero con más gastos -->
+                <div class="bg-gradient-to-br from-blanco-dividido to-marfil-mapamundi rounded-2xl shadow-lg p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                            <span class="text-2xl">🏆</span>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Más usado</p>
+                            <p class="text-lg font-bold text-gris-billetera truncate">{{ getMostUsedDinero() }}</p>
+                        </div>
+                    </div>
+                    <div class="h-1 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Lista de dineros con gastos -->
+            <div class="space-y-6">
+                <div 
+                    v-for="dinero in filteredDineros" 
+                    :key="dinero.id"
+                    class="bg-blanco-dividido rounded-lg shadow-md overflow-hidden"
+                >
+                    <!-- Header del dinero -->
+                    <div class="p-6 border-b border-gray-200" :style="{ borderTopColor: dinero.color, borderTopWidth: '4px' }">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div 
+                                    class="w-12 h-12 rounded-full flex items-center justify-center text-blanco-dividido font-bold text-lg"
+                                    :style="{ backgroundColor: dinero.color }"
+                                >
+                                    {{ dinero.name.charAt(0).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gris-billetera">{{ dinero.name }}</h3>
+                                    <p v-if="dinero.description" class="text-sm text-gray-600">{{ dinero.description }}</p>
+                                    <div class="flex items-center gap-4 mt-1">
+                                        <span class="text-sm text-gray-500">{{ getDineroExpenseCount(dinero.id) }} gastos</span>
+                                        <span class="text-sm font-medium text-azul-tiquet">{{ formatMoney(getDineroTotal(dinero.id)) }}</span>
+                                        <span v-if="dinero.isDefault" class="text-xs px-2 py-1 bg-azul-tiquet/10 text-azul-tiquet rounded-full">
+                                            Por defecto
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <button 
+                                    @click="editDinero(dinero)"
+                                    class="text-azul-tiquet hover:text-azul-claro-viaje transition-colors p-2"
+                                    title="Editar dinero"
+                                >
+                                    ✏️
+                                </button>
+                                <button 
+                                    v-if="!dinero.isDefault"
+                                    @click="deleteDinero(dinero.id)"
+                                    class="text-red-500 hover:text-red-600 transition-colors p-2"
+                                    title="Eliminar dinero"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gastos del dinero -->
+                    <div class="p-6">
+                        <div v-if="getDineroExpenses(dinero.id).length === 0" class="text-center py-8 text-gray-500">
+                            <div class="text-4xl mb-2">📝</div>
+                            <p class="text-sm">No hay gastos en este dinero</p>
+                        </div>
+                        
+                        <div v-else class="space-y-3">
+                            <div 
+                                v-for="expense in getDineroExpenses(dinero.id).slice(0, 5)" 
+                                :key="expense.id"
+                                class="flex items-center justify-between p-3 bg-marfil-mapamundi rounded-lg hover:bg-azul-claro-viaje/20 transition-colors duration-200"
+                            >
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-gris-billetera text-sm">{{ expense.title }}</h4>
+                                    <p class="text-xs text-gray-600">
+                                        Pagado por {{ getUserName(expense.paidBy) }} • {{ formatDate(expense.date) }}
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-base font-semibold text-azul-tiquet">{{ formatMoney(expense.amount) }}</p>
+                                    <p class="text-xs text-gray-600">{{ expense.participants?.length || 0 }} participantes</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Ver más gastos -->
+                            <div v-if="getDineroExpenses(dinero.id).length > 5" class="text-center pt-2">
+                                <NuxtLink 
+                                    :to="`/expenses?dinero=${dinero.id}`"
+                                    class="text-azul-tiquet hover:text-azul-claro-viaje font-medium transition-colors text-sm"
+                                >
+                                    Ver todos los gastos ({{ getDineroExpenses(dinero.id).length }})
+                                </NuxtLink>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para gestionar dineros -->
+            <DineroModal 
+                v-if="showDineroModal"
+                @close="showDineroModal = false"
+            />
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+import { useDineroStore } from '~/stores/dinero.store'
+import { useExpenseStore } from '~/stores/expense.store'
+import { useUserStore } from '~/stores/user.store'
+import { useAlertStore } from '~/stores/alert.store'
+
+// Requerir autenticación para esta página
+definePageMeta({
+  middleware: 'auth'
+})
+
+// Stores
+const dineroStore = useDineroStore()
+const expenseStore = useExpenseStore()
+const userStore = useUserStore()
+const alertStore = useAlertStore()
+
+// Reactive data
+const showDineroModal = ref(false)
+const selectedDineroId = ref('')
+
+// Computed properties
+const dineros = computed(() => dineroStore.getAllDineros)
+const isLoading = computed(() => dineroStore.isLoading || expenseStore.isLoading)
+const totalExpenses = computed(() => expenseStore.getAllExpenses.length)
+const selectedDinero = computed(() => 
+    selectedDineroId.value ? dineroStore.getDineroById(parseInt(selectedDineroId.value)) : null
+)
+
+const filteredDineros = computed(() => {
+    if (selectedDineroId.value) {
+        const dinero = dineroStore.getDineroById(parseInt(selectedDineroId.value))
+        return dinero ? [dinero] : []
+    }
+    return dineros.value
+})
+
+// Methods
+const getUserName = (userId) => {
+    const user = userStore.getUserById(userId)
+    return user ? user.name : 'Usuario desconocido'
+}
+
+const formatMoney = (amount) => {
+    return new Intl.NumberFormat('es-ES', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(amount)
+}
+
+const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    })
+}
+
+const getDineroExpenses = (dineroId) => {
+    return expenseStore.getExpensesByDinero(dineroId)
+}
+
+const getDineroExpenseCount = (dineroId) => {
+    return expenseStore.getExpensesByDinero(dineroId).length
+}
+
+const getDineroTotal = (dineroId) => {
+    return expenseStore.getTotalExpensesByDinero(dineroId)
+}
+
+const getTotalAmount = () => {
+    return expenseStore.getAllExpenses.reduce((total, expense) => total + expense.amount, 0)
+}
+
+const getMostUsedDinero = () => {
+    if (dineros.value.length === 0) return 'Ninguno'
+    
+    const dineroUsage = dineros.value.map(dinero => ({
+        name: dinero.name,
+        count: getDineroExpenseCount(dinero.id)
+    })).sort((a, b) => b.count - a.count)
+    
+    return dineroUsage[0]?.count > 0 ? dineroUsage[0].name : 'Ninguno'
+}
+
+const editDinero = (dinero) => {
+    showDineroModal.value = true
+    // El modal manejará la edición internamente
+}
+
+const deleteDinero = async (dineroId) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este dinero? Los gastos asociados se moverán al dinero por defecto.')) {
+        return
+    }
+    
+    try {
+        // Mover gastos al dinero por defecto antes de eliminar
+        const expenses = expenseStore.getExpensesByDinero(dineroId)
+        const defaultDinero = dineroStore.getDefaultDinero
+        
+        if (defaultDinero && expenses.length > 0) {
+            for (const expense of expenses) {
+                await expenseStore.updateExpense(expense.id, {
+                    ...expense,
+                    dineroId: defaultDinero.id
+                })
+            }
+        }
+        
+        await dineroStore.deleteDinero(dineroId)
+        alertStore.success('Dinero eliminado correctamente')
+    } catch (error) {
+        alertStore.error('Error al eliminar el dinero')
+    }
+}
+
+// Initialize
+onMounted(async () => {
+    try {
+        // Inicializar usuarios si no están cargados
+        if (userStore.users.length === 0) {
+            await userStore.initializeUsers()
+        }
+        
+        // Inicializar dineros
+        if (dineroStore.dineros.length === 0) {
+            await dineroStore.initializeDineros()
+        }
+        
+        // Inicializar gastos
+        if (expenseStore.expenses.length === 0) {
+            await expenseStore.initializeExpenses()
+        }
+    } catch (error) {
+        console.error('Error al cargar datos:', error)
+        alertStore.error('Error al cargar los datos')
+    }
+})
+
+console.log('dineros-page')
+</script>

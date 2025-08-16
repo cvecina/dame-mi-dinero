@@ -1,1 +1,56 @@
-{}
+{
+  "inviteUser": {
+    "title": "Invite User",
+    "description": "Generate an invitation link for other users to join this dinero.",
+    "generateLink": "Generate Link",
+    "generating": "Generating...",
+    "linkGenerated": "Link generated!",
+    "shareLink": "Share this link:",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "generateNew": "Generate New",
+    "close": "Close",
+    "linkGeneratedSuccess": "Invitation link generated successfully",
+    "errorGeneratingLink": "Error generating invitation link",
+    "linkCopiedSuccess": "Link copied to clipboard",
+    "errorCopyingLink": "Error copying link"
+  },
+  "users": {
+    "title": "Users",
+    "description": "Manage system users",
+    "addUser": "Add User",
+    "edit": "Edit",
+    "viewDetails": "View Details",
+    "delete": "Delete",
+    "dineros": "Dineros",
+    "expenses": "Expenses",
+    "noUsers": "No users",
+    "noUsersDescription": "No users have been registered in the system yet",
+    "createFirstUser": "Create First User",
+    "editUser": "Edit User",
+    "createUser": "Create User",
+    "name": "Name",
+    "email": "Email",
+    "nickname": "Nickname",
+    "password": "Password",
+    "confirmDelete": "Are you sure you want to delete {name}?",
+    "userDeleted": "User deleted successfully",
+    "errorDeletingUser": "Error deleting user",
+    "userUpdated": "User updated successfully",
+    "userCreated": "User created successfully",
+    "errorSubmittingUser": "Error saving user",
+    "errorLoadingUsers": "Error loading users",
+    "featureComingSoon": "Feature coming soon"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

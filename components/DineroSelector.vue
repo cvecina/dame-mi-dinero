@@ -74,7 +74,7 @@ const selectedDineroId = ref(null)
 const isHovered = ref(false)
 
 // Computed properties
-const dineros = computed(() => dineroStore.getAllDineros)
+const dineros = computed(() => dineroStore.getAllDineros || [])
 const selectedDinero = computed(() => {
     const dinero = selectedDineroId.value ? dineroStore.getDineroById(parseInt(selectedDineroId.value)) : null
     return dinero
@@ -127,7 +127,8 @@ onMounted(async () => {
     
     try {
         // Cargar dineros si no están cargados
-        if (dineros.value.length === 0) {
+        if (!dineros.value || dineros.value.length === 0) {
+            console.log('DineroSelector: Loading dineros...')
             await dineroStore.initializeDineros()
         }
         
@@ -139,6 +140,7 @@ onMounted(async () => {
         selectedDineroId.value = contextDineroId ? String(contextDineroId) : null
         
         console.log('DineroSelector: Initialization complete. Selected:', contextDineroId)
+        console.log('DineroSelector: Available dineros:', dineros.value?.length || 0)
     } catch (error) {
         console.error('Error al inicializar selector de dinero:', error)
         alertStore.error('Error al cargar dineros')

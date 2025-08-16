@@ -773,10 +773,10 @@
                         <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 pr-20 sm:pr-0">
                             <div class="flex items-center gap-3">
                                 <div class="w-14 h-14 bg-gradient-to-br from-azul-tiquet to-azul-claro-viaje rounded-full flex items-center justify-center text-blanco-dividido font-bold text-xl shadow-md">
-                                    {{ getUserName(currentUser.id).charAt(0).toUpperCase() }}
+                                    {{ (getUserName(currentUser.id) || '?').charAt(0).toUpperCase() }}
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <h3 class="font-bold text-gris-billetera text-lg sm:text-xl truncate">{{ getUserName(currentUser.id) }}</h3>
+                                    <h3 class="font-bold text-gris-billetera text-lg sm:text-xl truncate">{{ getUserName(currentUser.id) || 'Usuario' }}</h3>
                                     <p class="text-base sm:text-lg font-semibold break-words" :class="balances[currentUser.id].balance >= 0 ? 'text-azul-tiquet' : 'text-red-600'">
                                         {{ formatMoney(balances[currentUser.id].balance) }}
                                     </p>
@@ -815,10 +815,10 @@
                                 <div class="flex items-center justify-between p-3">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 bg-lima-compartida rounded-full flex items-center justify-center text-gris-billetera font-semibold text-sm">
-                                            {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                            {{ (getUserName(debt.userId) || '?').charAt(0).toUpperCase() }}
                                         </div>
                                         <div>
-                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
+                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) || 'Usuario' }}</p>
                                             <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
                                         </div>
                                     </div>
@@ -887,10 +887,10 @@
                                 <div class="flex items-center justify-between p-3">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-blanco-dividido font-semibold text-sm">
-                                            {{ getUserName(debt.userId).charAt(0).toUpperCase() }}
+                                            {{ (getUserName(debt.userId) || '?').charAt(0).toUpperCase() }}
                                         </div>
                                         <div>
-                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) }}</p>
+                                            <p class="font-medium text-gris-billetera">{{ getUserName(debt.userId) || 'Usuario' }}</p>
                                             <p class="text-xs text-gray-600">{{ debt.expenseCount }} gasto{{ debt.expenseCount !== 1 ? 's' : '' }}</p>
                                         </div>
                                     </div>
@@ -1075,12 +1075,18 @@ import { useScrollPosition } from '~/composables/useScrollPosition'
 import { useDashboardConfig } from '~/composables/useDashboardConfig'
 import AnalyticsDashboard from '~/components/AnalyticsDashboard.vue'
 
+// Requerir autenticación para esta página
+definePageMeta({
+  middleware: 'auth'
+})
+
 const { debug, log, error } = useLogger()
 const { } = usePWAManager()
 const { preserveScrollPosition } = useScrollPosition()
 const { dashboardPanels, loadPanelSettings, savePanelSettings, movePanelUp, movePanelDown, togglePanelVisibility, resetToDefault } = useDashboardConfig()
 
 // Stores
+const authStore = useAuthStore()
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
@@ -1514,8 +1520,20 @@ const peopleIOwe = computed(() => {
 
 // Methods
 const getUserName = (userId) => {
+    // Si es el usuario actual autenticado
+    if (authStore.user && userId === authStore.user.id) {
+        return authStore.user.nickname || authStore.user.name || authStore.user.username || 'Usuario actual'
+    }
+    
+    // Buscar en la lista de usuarios cargados
     const user = userStore.getUserById(userId)
-    return user ? user.name : 'Usuario desconocido'
+    if (user) {
+        return user.nickname || user.name || user.username || 'Usuario'
+    }
+    
+    // Fallback para casos donde no se encuentra el usuario
+    console.warn('getUserName: Usuario no encontrado para ID:', userId)
+    return `Usuario ${userId.toString().slice(-4)}`
 }
 
 const formatMoney = (amount) => {

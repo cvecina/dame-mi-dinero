@@ -1,13 +1,57 @@
 export default defineEventHandler(async (event) => {
     const method = getMethod(event)
+    const query = getQuery(event)
     
     try {
         if (method === 'GET') {
-            // Obtener todos los usuarios
-            const users = await $fetch('/api/storage/users') || []
-            return {
-                success: true,
-                data: users
+            const { dineroId } = query
+            
+            if (dineroId) {
+                // Obtener usuarios filtrados por dinero
+                const dineros = await $fetch('/api/storage/dineros') || []
+                const authUsers = await $fetch('/api/storage/auth-users') || []
+                
+                // Buscar el dinero específico
+                const dinero = dineros.find(d => d.id === parseInt(dineroId))
+                if (!dinero) {
+                    throw createError({
+                        statusCode: 404,
+                        statusMessage: 'Dinero no encontrado'
+                    })
+                }
+                
+                // Obtener IDs de usuarios que pertenecen al dinero
+                const memberIds = dinero.members ? dinero.members.map(m => m.userId) : []
+                
+                // Filtrar usuarios autenticados que son miembros del dinero
+                const filteredUsers = authUsers
+                    .filter(user => memberIds.includes(user.id))
+                    .map(user => ({
+                        id: user.id,
+                        name: user.name,
+                        nickname: user.nickname || user.name.split(' ')[0],
+                        email: user.email,
+                        avatar: user.profile?.avatar || null,
+                        role: dinero.members.find(m => m.userId === user.id)?.role || 'member',
+                        joinedAt: dinero.members.find(m => m.userId === user.id)?.joinedAt
+                    }))
+                
+                return {
+                    success: true,
+                    data: filteredUsers,
+                    dinero: {
+                        id: dinero.id,
+                        name: dinero.name,
+                        memberCount: filteredUsers.length
+                    }
+                }
+            } else {
+                // Mantener funcionalidad anterior si no se especifica dineroId
+                const users = await $fetch('/api/storage/users') || []
+                return {
+                    success: true,
+                    data: users
+                }
             }
         }
         

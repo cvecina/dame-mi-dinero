@@ -22,7 +22,7 @@
           </div>
 
           <!-- Menú de navegación - Desktop -->
-          <div class="hidden md:flex items-center space-x-6">
+          <div v-if="isAuthenticated" class="hidden md:flex items-center space-x-6">
             <NuxtLink
               to="/home"
               class="text-gris-billetera hover:text-azul-tiquet px-3 py-2 rounded-lg font-medium transition-colors"
@@ -78,13 +78,24 @@
           <!-- Selectors y menú móvil -->
           <div class="flex items-center gap-2 sm:gap-4">
             <!-- Selector de dinero -->
-            <DineroSelector />
+            <DineroSelector v-if="isAuthenticated" />
             
-            <!-- Selector de usuario -->
-            <UserSelector />
+            <!-- Información del usuario autenticado -->
+            <UserDisplay v-if="isAuthenticated" />
+
+            <!-- Botón de login (solo si NO está autenticado) -->
+            <NuxtLink
+              v-if="!isAuthenticated"
+              to="/"
+              class="flex items-center gap-2 px-4 py-2 bg-azul-tiquet text-blanco-dividido hover:bg-azul-tiquet/90 rounded-lg transition-all duration-200 font-medium"
+            >
+              <span>🔑</span>
+              <span>Iniciar Sesión</span>
+            </NuxtLink>
 
             <!-- Botón menú móvil -->
             <button
+              v-if="isAuthenticated"
               @click="showMobileMenu = !showMobileMenu"
               class="md:hidden p-2 text-gris-billetera hover:text-azul-tiquet transition-colors"
             >
@@ -107,7 +118,7 @@
 
         <!-- Menú móvil -->
         <div
-          v-if="showMobileMenu"
+          v-if="showMobileMenu && isAuthenticated"
           class="md:hidden border-t border-gray-200 py-4"
         >
           <div class="space-y-2">
@@ -171,17 +182,29 @@
 
           <!-- Usuario actual en móvil -->
           <div class="sm:hidden mt-4 pt-4 border-t border-gray-200">
-            <div class="flex items-center gap-3 px-3">
-              <div
-                class="w-10 h-10 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-semibold"
+            <div class="flex items-center justify-between px-3">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-10 h-10 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido font-semibold"
+                >
+                  {{ currentUser?.nickname?.charAt(0)?.toUpperCase() || currentUser?.name?.charAt(0)?.toUpperCase() || "U" }}
+                </div>
+                <div>
+                  <p class="font-medium text-gris-billetera">
+                    {{ currentUser?.nickname || currentUser?.name || "Usuario" }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {{ currentUser?.email || "email@ejemplo.com" }}
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="handleLogout"
+                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Cerrar sesión"
               >
-                {{ currentUser?.name?.charAt(0)?.toUpperCase() || "U" }}
-              </div>
-              <div>
-                <p class="font-medium text-gris-billetera">
-                  {{ currentUser?.name || "Usuario" }}
-                </p>
-              </div>
+                <span>🚪</span>
+              </button>
             </div>
           </div>
         </div>
@@ -202,9 +225,6 @@
 
     <!-- Toast/Alert -->
     <Toast />
-
-    <!-- Modal de bienvenida para seleccionar usuario -->
-    <UserWelcomeModal />
   </div>
 </template>
 
@@ -212,16 +232,23 @@
 import { ref, computed, onMounted } from "vue";
 import { useUserStore } from "~/stores/user.store";
 import { useExpenseStore } from "~/stores/expense.store";
+import { useAuth } from "~/composables/useAuth";
 
 // Stores
 const userStore = useUserStore();
 const expenseStore = useExpenseStore();
+const { isAuthenticated, logout } = useAuth();
 
 // Reactive data
 const showMobileMenu = ref(false);
 
-// Computed
+// Computed - ahora el usuario actual viene del store de autenticación
 const currentUser = computed(() => userStore.getCurrentUser);
+
+// Methods
+const handleLogout = async () => {
+  await logout();
+}
 
 // Inicializar datos cuando se monta el layout
 onMounted(async () => {

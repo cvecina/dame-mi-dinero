@@ -320,6 +320,11 @@ import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useScrollPosition } from '~/composables/useScrollPosition'
 
+// Requerir autenticación para esta página
+definePageMeta({
+  middleware: 'auth'
+})
+
 // Stores
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
@@ -498,7 +503,7 @@ const optimizedPayments = computed(() => {
 // Methods
 const getUserName = (userId) => {
     const user = userStore.getUserById(userId)
-    return user ? user.name : 'Usuario desconocido'
+    return user && user.name ? user.name : 'Usuario desconocido'
 }
 
 const formatMoney = (amount) => {

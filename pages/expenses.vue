@@ -88,7 +88,7 @@
                         >
                             <option value="">Todos los usuarios</option>
                             <option v-for="user in users" :key="user.id" :value="user.id">
-                                👤 {{ user.name }}
+                                👤 {{ user.nickname || user.name || user.username || 'Usuario' }}
                             </option>
                         </select>
                     </div>
@@ -189,9 +189,9 @@
                                     >
                                         <div class="flex items-center gap-2">
                                             <div class="w-6 h-6 bg-azul-tiquet rounded-full flex items-center justify-center text-blanco-dividido text-xs font-semibold">
-                                                {{ getUserName(participant).charAt(0).toUpperCase() }}
+                                                {{ (getUserName(participant) || '?').charAt(0).toUpperCase() }}
                                             </div>
-                                            <span class="text-xs sm:text-sm font-medium">{{ getUserName(participant) }}</span>
+                                            <span class="text-xs sm:text-sm font-medium">{{ getUserName(participant) || 'Usuario desconocido' }}</span>
                                             <span class="text-xs text-gray-600">
                                                 ({{ formatMoney(getUserAmountInExpense(expense, participant)) }})
                                             </span>
@@ -258,7 +258,13 @@ import { useContextStore } from '~/stores/context.store'
 import { useDineroStore } from '~/stores/dinero.store'
 import { useScrollPosition } from '~/composables/useScrollPosition'
 
+// Requerir autenticación para esta página
+definePageMeta({
+  middleware: 'auth'
+})
+
 // Stores
+const authStore = useAuthStore()
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
@@ -336,8 +342,20 @@ const totalFilteredAmount = computed(() => {
 
 // Methods
 const getUserName = (userId) => {
+    // Si es el usuario actual autenticado
+    if (authStore.user && userId === authStore.user.id) {
+        return authStore.user.nickname || authStore.user.name || authStore.user.username || 'Usuario actual'
+    }
+    
+    // Buscar en la lista de usuarios cargados
     const user = userStore.getUserById(userId)
-    return user ? user.name : 'Usuario desconocido'
+    if (user) {
+        return user.nickname || user.name || user.username || 'Usuario'
+    }
+    
+    // Fallback para casos donde no se encuentra el usuario
+    console.warn('getUserName: Usuario no encontrado para ID:', userId)
+    return `Usuario ${userId.toString().slice(-4)}`
 }
 
 const formatMoney = (amount) => {
@@ -422,7 +440,7 @@ onMounted(async () => {
         await contextStore.initializeSelectedDinero()
         
         // Asegurar que tenemos usuarios y gastos actualizados
-        await userStore.fetchUsers()
+        await userStore.initializeUsers()
         await expenseStore.fetchExpenses()
         
         console.log('Expenses page: Data loaded. Selected dinero:', contextStore.getSelectedDineroId)

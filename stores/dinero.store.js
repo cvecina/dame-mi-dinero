@@ -1,172 +1,319 @@
-import { defineStore } from "pinia";
+export const useDineroStore = defineStore('dinero', () => {
+    // State
+    const dineros = ref([])
+    const loading = ref(false)
+    const error = ref(null)
 
-export const useDineroStore = defineStore({
-    id: "dinero",
-    state: () => ({
-        dineros: [],
-        loading: false
-    }),
-    
-    getters: {
-        getAllDineros: (state) => Array.isArray(state.dineros) ? state.dineros : [],
+    // Getters
+    const getMyDineros = computed(() => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) return []
         
-        getDineroById: (state) => (id) => {
-            return state.dineros.find(dinero => dinero.id === id);
-        },
+        return dineros.value.filter(dinero => dinero.ownerId === authStore.user?.id)
+    })
+
+    const getSharedDineros = computed(() => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) return []
         
-        getDefaultDinero: (state) => {
-            return state.dineros.find(dinero => dinero.isDefault) || null;
-        },
+        return dineros.value.filter(dinero => 
+            dinero.ownerId !== authStore.user?.id && 
+            dinero.sharedWith?.includes(authStore.user?.id)
+        )
+    })
+
+    const getAccessibleDineros = computed(() => {
+        return [...getMyDineros.value, ...getSharedDineros.value]
+    })
+
+    const getDefaultDinero = computed(() => {
+        return getMyDineros.value.find(dinero => dinero.isDefault) || getMyDineros.value[0] || null
+    })
+
+    const getDineroById = computed(() => {
+        return (id) => getAccessibleDineros.value.find(dinero => dinero.id === id)
+    })
+
+    // Helper para obtener headers con autenticación
+    const getAuthHeaders = () => {
+        const authStore = useAuthStore()
+        if (!authStore.token) {
+            throw new Error('Usuario no autenticado')
+        }
         
-        getDineroExpenseCount: (state) => (dineroId) => {
-            // Esta función será usada por el expense store
-            return 0; // Placeholder por ahora
-        },
-        
-        isLoading: (state) => state.loading
-    },
-    
-    actions: {
-        async fetchDineros() {
-            this.loading = true
-            try {
-                const response = await $fetch('/api/dineros')
-                this.dineros = response.data || []
-                
-                // Asegurar que existe un dinero por defecto
-                await this.ensureDefaultDinero()
-                
-                console.log('fetchDineros')
-                return this.dineros
-            } catch (error) {
-                console.error('Error al obtener dineros:', error)
-                throw error
-            } finally {
-                this.loading = false
-            }
-        },
-        
-        async addDinero(dineroData) {
-            this.loading = true
-            try {
-                const response = await $fetch('/api/dineros', {
-                    method: 'POST',
-                    body: dineroData
-                })
-                
-                const newDinero = response.data
-                this.dineros.push(newDinero)
-                
-                console.log('addDinero')
-                return newDinero
-            } catch (error) {
-                console.error('Error al añadir dinero:', error)
-                throw error
-            } finally {
-                this.loading = false
-            }
-        },
-        
-        async updateDinero(id, dineroData) {
-            this.loading = true
-            try {
-                const response = await $fetch('/api/dineros', {
-                    method: 'PUT',
-                    body: { id, ...dineroData }
-                })
-                
-                const updatedDinero = response.data
-                const dineroIndex = this.dineros.findIndex(dinero => dinero.id === id)
-                if (dineroIndex !== -1) {
-                    this.dineros[dineroIndex] = updatedDinero
-                }
-                
-                console.log('updateDinero')
-                return updatedDinero
-            } catch (error) {
-                console.error('Error al actualizar dinero:', error)
-                throw error
-            } finally {
-                this.loading = false
-            }
-        },
-        
-        async deleteDinero(id) {
-            this.loading = true
-            try {
-                // No permitir eliminar el dinero por defecto
-                const dinero = this.getDineroById(id)
-                if (dinero && dinero.isDefault) {
-                    throw new Error('No se puede eliminar el dinero por defecto')
-                }
-                
-                await $fetch('/api/dineros', {
-                    method: 'DELETE',
-                    query: { id }
-                })
-                
-                this.dineros = this.dineros.filter(dinero => dinero.id !== id)
-                
-                console.log('deleteDinero')
-            } catch (error) {
-                console.error('Error al eliminar dinero:', error)
-                throw error
-            } finally {
-                this.loading = false
-            }
-        },
-        
-        async ensureDefaultDinero() {
-            // Verificar si existe un dinero por defecto
-            const defaultDinero = this.getDefaultDinero
-            
-            if (!defaultDinero) {
-                // Crear el dinero por defecto
-                const defaultDineroData = {
-                    name: "Dineros sin nombre",
-                    description: "Contenedor por defecto para gastos sin dinero asignado",
-                    isDefault: true,
-                    color: "#3A7CA5", // Azul Tiquet
-                    createdAt: new Date().toISOString()
-                }
-                
-                await this.addDinero(defaultDineroData)
-            }
-        },
-        
-        async moveExpenseToDinero(expenseId, newDineroId) {
-            try {
-                // Importar el expense store
-                const { useExpenseStore } = await import('~/stores/expense.store')
-                const expenseStore = useExpenseStore()
-                
-                // Obtener el gasto
-                const expense = expenseStore.getAllExpenses.find(exp => exp.id === expenseId)
-                if (!expense) {
-                    throw new Error('Gasto no encontrado')
-                }
-                
-                // Actualizar el dineroId del gasto
-                await expenseStore.updateExpense(expenseId, {
-                    ...expense,
-                    dineroId: newDineroId
-                })
-                
-                console.log('moveExpenseToDinero')
-                return true
-            } catch (error) {
-                console.error('Error al mover gasto a dinero:', error)
-                throw error
-            }
-        },
-        
-        async initializeDineros() {
-            try {
-                await this.fetchDineros()
-                console.log('initializeDineros')
-            } catch (error) {
-                console.error('Error al inicializar dineros:', error)
-            }
+        return {
+            'Authorization': `Bearer ${authStore.token}`,
+            'Content-Type': 'application/json'
         }
     }
-});
+
+    // Actions
+    const fetchDineros = async () => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            console.warn('fetchDineros: Usuario no autenticado')
+            dineros.value = []
+            return
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            })
+
+            if (response.success) {
+                dineros.value = response.data || []
+                console.log('fetchDineros: Dineros cargados exitosamente', dineros.value.length)
+            } else {
+                throw new Error(response.message || 'Error al cargar dineros')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al cargar dineros'
+            console.error('fetchDineros error:', err)
+            dineros.value = []
+            
+            // Si es error de autenticación, limpiar sesión
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const createDinero = async (dineroData) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: dineroData
+            })
+
+            if (response.success) {
+                dineros.value.push(response.data)
+                console.log('createDinero: Dinero creado exitosamente', response.data)
+                return response.data
+            } else {
+                throw new Error(response.message || 'Error al crear dinero')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al crear dinero'
+            console.error('createDinero error:', err)
+            
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const updateDinero = async (id, updateData) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: { id, ...updateData }
+            })
+
+            if (response.success) {
+                const index = dineros.value.findIndex(d => d.id === id)
+                if (index !== -1) {
+                    dineros.value[index] = response.data
+                }
+                console.log('updateDinero: Dinero actualizado exitosamente', response.data)
+                return response.data
+            } else {
+                throw new Error(response.message || 'Error al actualizar dinero')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al actualizar dinero'
+            console.error('updateDinero error:', err)
+            
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const deleteDinero = async (id) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros', {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                body: { id }
+            })
+
+            if (response.success) {
+                dineros.value = dineros.value.filter(d => d.id !== id)
+                console.log('deleteDinero: Dinero eliminado exitosamente')
+                return true
+            } else {
+                throw new Error(response.message || 'Error al eliminar dinero')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al eliminar dinero'
+            console.error('deleteDinero error:', err)
+            
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const shareDinero = async (dineroId, targetUserId) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros/share', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: { dineroId, targetUserId }
+            })
+
+            if (response.success) {
+                // Actualizar el dinero en el store local
+                const index = dineros.value.findIndex(d => d.id === dineroId)
+                if (index !== -1) {
+                    dineros.value[index] = response.data.dinero
+                }
+                console.log('shareDinero: Dinero compartido exitosamente')
+                return response.data
+            } else {
+                throw new Error(response.message || 'Error al compartir dinero')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al compartir dinero'
+            console.error('shareDinero error:', err)
+            
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    const unshareDinero = async (dineroId, targetUserId) => {
+        const authStore = useAuthStore()
+        if (!authStore.isAuthenticated) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        loading.value = true
+        error.value = null
+
+        try {
+            const response = await $fetch('/api/dineros/share', {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+                body: { dineroId, targetUserId }
+            })
+
+            if (response.success) {
+                // Actualizar el dinero en el store local
+                const index = dineros.value.findIndex(d => d.id === dineroId)
+                if (index !== -1) {
+                    dineros.value[index] = response.data
+                }
+                console.log('unshareDinero: Dinero ya no compartido')
+                return response.data
+            } else {
+                throw new Error(response.message || 'Error al dejar de compartir dinero')
+            }
+        } catch (err) {
+            error.value = err.message || 'Error al dejar de compartir dinero'
+            console.error('unshareDinero error:', err)
+            
+            if (err.statusCode === 401) {
+                authStore.logout()
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    // Función para limpiar el estado (útil para logout)
+    const clearDineros = () => {
+        dineros.value = []
+        error.value = null
+        loading.value = false
+        console.log('clearDineros: Estado del store limpiado')
+    }
+
+    // Alias para compatibilidad con componentes existentes
+    const initializeDineros = fetchDineros
+
+    // Getters adicionales para compatibilidad
+    const getAllDineros = computed(() => getAccessibleDineros.value)
+    const isLoading = computed(() => loading.value)
+
+    return {
+        // State
+        dineros: readonly(dineros),
+        loading: readonly(loading),
+        error: readonly(error),
+        
+        // Getters
+        getMyDineros,
+        getSharedDineros,
+        getAccessibleDineros,
+        getDefaultDinero,
+        getDineroById,
+        getAllDineros,
+        isLoading,
+        
+        // Actions
+        fetchDineros,
+        createDinero,
+        updateDinero,
+        deleteDinero,
+        shareDinero,
+        unshareDinero,
+        clearDineros,
+        initializeDineros
+    }
+})

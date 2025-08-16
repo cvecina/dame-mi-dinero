@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { useAuthStore } from "./auth.store";
 
 export const useExpenseStore = defineStore({
     id: "expense",
@@ -9,6 +10,17 @@ export const useExpenseStore = defineStore({
     
     getters: {
         getAllExpenses: (state) => Array.isArray(state.expenses) ? state.expenses : [],
+        
+        // Gastos del usuario autenticado
+        getCurrentUserExpenses: (state) => {
+            const authStore = useAuthStore();
+            const currentUserId = authStore.user?.id;
+            if (!currentUserId) return [];
+            
+            return state.expenses.filter(expense => 
+                expense.paidBy === currentUserId || expense.participants.includes(currentUserId)
+            );
+        },
         
         getExpensesByUser: (state) => (userId) => {
             return state.expenses.filter(expense => 

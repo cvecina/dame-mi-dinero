@@ -1,1 +1,56 @@
-{}
+{
+  "inviteUser": {
+    "title": "Invitar Usuario",
+    "description": "Genera un enlace de invitación para que otros usuarios puedan unirse a este dinero.",
+    "generateLink": "Generar Enlace",
+    "generating": "Generando...",
+    "linkGenerated": "¡Enlace generado!",
+    "shareLink": "Comparte este enlace:",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "generateNew": "Generar Nuevo",
+    "close": "Cerrar",
+    "linkGeneratedSuccess": "Enlace de invitación generado exitosamente",
+    "errorGeneratingLink": "Error al generar el enlace de invitación",
+    "linkCopiedSuccess": "Enlace copiado al portapapeles",
+    "errorCopyingLink": "Error al copiar el enlace"
+  },
+  "users": {
+    "title": "Usuarios",
+    "description": "Gestiona los usuarios del sistema",
+    "addUser": "Agregar Usuario",
+    "edit": "Editar",
+    "viewDetails": "Ver Detalles",
+    "delete": "Eliminar",
+    "dineros": "Dineros",
+    "expenses": "Gastos",
+    "noUsers": "No hay usuarios",
+    "noUsersDescription": "Aún no se han registrado usuarios en el sistema",
+    "createFirstUser": "Crear Primer Usuario",
+    "editUser": "Editar Usuario",
+    "createUser": "Crear Usuario",
+    "name": "Nombre",
+    "email": "Correo Electrónico",
+    "nickname": "Alias",
+    "password": "Contraseña",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar a {name}?",
+    "userDeleted": "Usuario eliminado exitosamente",
+    "errorDeletingUser": "Error al eliminar el usuario",
+    "userUpdated": "Usuario actualizado exitosamente",
+    "userCreated": "Usuario creado exitosamente",
+    "errorSubmittingUser": "Error al guardar el usuario",
+    "errorLoadingUsers": "Error al cargar los usuarios",
+    "featureComingSoon": "Funcionalidad próximamente disponible"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "create": "Crear",
+    "saving": "Guardando...",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "warning": "Advertencia",
+    "info": "Información"
+  }
+}

@@ -4,31 +4,64 @@ export const useUserStore = defineStore({
     id: "user",
     state: () => ({
         users: [],
-        currentUser: null,
         loading: false
     }),
     
     getters: {
         getAllUsers: (state) => state.users,
         getUserById: (state) => (id) => state.users.find(user => user.id === id),
-        getCurrentUser: (state) => state.currentUser,
+        // El usuario actual ahora viene del store de autenticación
+        getCurrentUser: () => {
+            const authStore = useAuthStore();
+            return authStore.user;
+        },
         isLoading: (state) => state.loading
     },
     
     actions: {
+        // Método para obtener usuarios desde el sistema legacy (sin autenticación)
         async fetchUsers() {
             this.loading = true
             try {
                 const response = await $fetch('/api/users')
                 this.users = response.data || []
                 
-                // No establecer automáticamente un usuario actual
-                // Dejar que el usuario elija manualmente
-                
-                console.log('fetchUsers')
+                console.log('fetchUsers (legacy)')
                 return this.users
             } catch (error) {
                 console.error('Error al obtener usuarios:', error)
+                throw error
+            } finally {
+                this.loading = false
+            }
+        },
+
+        // Método para obtener usuarios autenticados (para compartir)
+        async fetchAuthenticatedUsers() {
+            const authStore = useAuthStore();
+            if (!authStore.isAuthenticated) {
+                console.warn('fetchAuthenticatedUsers: Usuario no autenticado');
+                return [];
+            }
+
+            this.loading = true
+            try {
+                const response = await $fetch('/api/users/list', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authStore.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                this.users = response.data || []
+                console.log('fetchAuthenticatedUsers: Loaded', this.users.length, 'users')
+                return this.users
+            } catch (error) {
+                console.error('Error al obtener usuarios autenticados:', error)
+                if (error.statusCode === 401) {
+                    authStore.logout()
+                }
                 throw error
             } finally {
                 this.loading = false
@@ -46,9 +79,6 @@ export const useUserStore = defineStore({
                 const newUser = response.data
                 this.users.push(newUser)
                 
-                // No establecer automáticamente como usuario actual
-                // Dejar que lo seleccione manualmente
-                
                 console.log('addUser')
                 return newUser
             } catch (error) {
@@ -58,7 +88,7 @@ export const useUserStore = defineStore({
                 this.loading = false
             }
         },
-        
+
         async updateUser(id, userData) {
             this.loading = true
             try {
@@ -73,11 +103,6 @@ export const useUserStore = defineStore({
                     this.users[userIndex] = updatedUser
                 }
                 
-                // Si era el usuario actual, actualizarlo
-                if (this.currentUser?.id === id) {
-                    this.currentUser = updatedUser
-                }
-                
                 console.log('updateUser')
                 return updatedUser
             } catch (error) {
@@ -87,7 +112,7 @@ export const useUserStore = defineStore({
                 this.loading = false
             }
         },
-        
+
         async deleteUser(id) {
             this.loading = true
             try {
@@ -98,11 +123,6 @@ export const useUserStore = defineStore({
                 
                 this.users = this.users.filter(user => user.id !== id)
                 
-                // Si era el usuario actual, cambiar al primero disponible
-                if (this.currentUser?.id === id) {
-                    this.currentUser = this.users.length > 0 ? this.users[0] : null
-                }
-                
                 console.log('deleteUser')
             } catch (error) {
                 console.error('Error al eliminar usuario:', error)
@@ -111,33 +131,17 @@ export const useUserStore = defineStore({
                 this.loading = false
             }
         },
-        
-        setCurrentUser(user) {
-            this.currentUser = user
-            // Guardar en localStorage para persistencia
-            if (typeof window !== 'undefined') {
-                if (user) {
-                    localStorage.setItem('currentUserId', user.id.toString())
-                } else {
-                    localStorage.removeItem('currentUserId')
-                }
-            }
-            console.log('setCurrentUser')
-        },
-        
+
         async initializeUsers() {
             try {
-                await this.fetchUsers()
+                const authStore = useAuthStore();
                 
-                // Intentar restaurar el usuario actual desde localStorage
-                if (typeof window !== 'undefined') {
-                    const savedUserId = localStorage.getItem('currentUserId')
-                    if (savedUserId && this.users.length > 0) {
-                        const savedUser = this.users.find(user => user.id.toString() === savedUserId)
-                        if (savedUser) {
-                            this.currentUser = savedUser
-                        }
-                    }
+                // Si el usuario está autenticado, usar el endpoint autenticado
+                // De lo contrario, usar el endpoint legacy
+                if (authStore.isAuthenticated) {
+                    await this.fetchAuthenticatedUsers()
+                } else {
+                    await this.fetchUsers()
                 }
                 
                 console.log('initializeUsers')

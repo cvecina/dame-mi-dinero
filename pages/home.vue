@@ -21,7 +21,7 @@
             <!-- Header de bienvenida -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl sm:text-4xl font-bold text-gris-billetera mb-2">
-                    ¡Hola, <span class="text-azul-tiquet">{{ currentUser.name }}</span>!
+                    ¡Hola, <span class="text-azul-tiquet">{{ currentUser?.nickname || currentUser?.name || currentUser?.username || 'Usuario' }}</span>!
                 </h1>
                 <p class="text-gray-600 text-lg">
                     Aquí tienes un resumen rápido de tus gastos compartidos
@@ -224,9 +224,15 @@ import { useBudgetStore } from '~/stores/budget.store'
 import formatearTotal from '~/utils/formatMoney'
 import { useLogger } from '~/composables/useLogger'
 
+// Requerir autenticación para esta página
+definePageMeta({
+  middleware: 'auth'
+})
+
 const { debug, log, error } = useLogger()
 
 // Stores
+const authStore = useAuthStore()
 const expenseStore = useExpenseStore()
 const userStore = useUserStore()
 const alertStore = useAlertStore()
@@ -365,8 +371,20 @@ const peopleIOwe = computed(() => {
 
 // Methods
 const getUserName = (userId) => {
+    // Si es el usuario actual autenticado
+    if (authStore.user && userId === authStore.user.id) {
+        return authStore.user.nickname || authStore.user.name || authStore.user.username || 'Usuario actual'
+    }
+    
+    // Buscar en la lista de usuarios cargados
     const user = userStore.getUserById(userId)
-    return user ? user.name : 'Usuario desconocido'
+    if (user) {
+        return user.nickname || user.name || user.username || 'Usuario'
+    }
+    
+    // Fallback para casos donde no se encuentra el usuario
+    console.warn('getUserName: Usuario no encontrado para ID:', userId)
+    return `Usuario ${userId.toString().slice(-4)}`
 }
 
 const formatMoney = (amount) => {
