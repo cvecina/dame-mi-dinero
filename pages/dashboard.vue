@@ -1224,8 +1224,6 @@
                 </div>
               </div>
             </div>
-
-            aaa
             <!-- Detalles de quién te debe dinero -->
             <div v-if="peopleWhoOweMe.length > 0">
               <h3

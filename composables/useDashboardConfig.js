@@ -3,85 +3,93 @@ import { ref, watch } from 'vue'
 export const useDashboardConfig = () => {
     // Configuración por defecto de los paneles
     const defaultPanels = [
-        { 
-            id: 'analytics', 
-            name: 'Smart Analytics', 
-            icon: '🧠', 
-            visible: true, 
+        {
+            id: 'analytics',
+            name: 'Smart Analytics',
+            icon: '🧠',
+            visible: true,
             order: 1,
             description: 'Insights inteligentes y análisis predictivo de tus gastos'
         },
-        { 
-            id: 'alerts', 
-            name: 'Alertas importantes', 
-            icon: '⚠️', 
-            visible: true, 
+        {
+            id: 'alerts',
+            name: 'Alertas importantes',
+            icon: '⚠️',
+            visible: true,
             order: 2,
             description: 'Notificaciones y avisos importantes'
         },
-        { 
-            id: 'summary', 
-            name: 'Resumen de balances', 
-            icon: '💰', 
-            visible: true, 
+        {
+            id: 'balance',
+            name: 'Tu balance',
+            icon: '💳',
+            visible: true,
             order: 3,
+            description: 'Dinero que tienes'
+        },
+        {
+            id: 'summary',
+            name: 'Resumen de balances',
+            icon: '💰',
+            visible: true,
+            order: 4,
             description: 'Total gastado, tu balance y estadísticas del período'
         },
-        { 
-            id: 'budgets', 
-            name: 'Presupuestos activos', 
-            icon: '💼', 
-            visible: true, 
-            order: 4,
+        {
+            id: 'budgets',
+            name: 'Presupuestos activos',
+            icon: '💼',
+            visible: true,
+            order: 5,
             description: 'Control de gastos por categoría'
         },
-        { 
-            id: 'categories', 
-            name: 'Gastos por categoría', 
-            icon: '📊', 
-            visible: true, 
-            order: 5,
+        {
+            id: 'categories',
+            name: 'Gastos por categoría',
+            icon: '📊',
+            visible: true,
+            order: 6,
             description: 'Análisis detallado de gastos organizados por categorías con gráficos'
         },
-        { 
-            id: 'recent', 
-            name: 'Gastos recientes', 
-            icon: '💸', 
-            visible: true, 
-            order: 6,
+        {
+            id: 'recent',
+            name: 'Gastos recientes',
+            icon: '💸',
+            visible: true,
+            order: 7,
             description: 'Últimos movimientos registrados'
         },
-        { 
-            id: 'pending', 
-            name: 'Pagos pendientes', 
-            icon: '⏰', 
-            visible: true, 
-            order: 7,
+        {
+            id: 'pending',
+            name: 'Pagos pendientes',
+            icon: '⏰',
+            visible: true,
+            order: 8,
             description: 'Gastos que aún no has pagado'
         },
-        { 
-            id: 'debts', 
-            name: 'Tus deudas', 
-            icon: '💳', 
-            visible: true, 
-            order: 8,
+        {
+            id: 'debts',
+            name: 'Tus deudas',
+            icon: '💳',
+            visible: true,
+            order: 9,
             description: 'Dinero que debes a otros'
         },
-        { 
-            id: 'credits', 
-            name: 'Te deben', 
-            icon: '💰', 
-            visible: true, 
-            order: 9,
+        {
+            id: 'credits',
+            name: 'Te deben',
+            icon: '💰',
+            visible: true,
+            order: 10,
             description: 'Dinero que otros te deben'
         }
     ]
 
     const dashboardPanels = ref([...defaultPanels])
-    
+
     // Clave para localStorage
     const STORAGE_KEY = 'dashboardPanelConfig'
-    
+
     // Función para cargar la configuración desde localStorage
     const loadPanelSettings = () => {
         if (process.client) {
@@ -89,7 +97,7 @@ export const useDashboardConfig = () => {
                 const saved = localStorage.getItem(STORAGE_KEY)
                 if (saved) {
                     const savedConfig = JSON.parse(saved)
-                    
+
                     // Actualizar paneles existentes con la configuración guardada
                     savedConfig.forEach(savedPanel => {
                         const panel = dashboardPanels.value.find(p => p.id === savedPanel.id)
@@ -98,10 +106,10 @@ export const useDashboardConfig = () => {
                             panel.order = savedPanel.order
                         }
                     })
-                    
+
                     // Ordenar paneles según el orden guardado
                     dashboardPanels.value.sort((a, b) => a.order - b.order)
-                    
+
                     console.log('loadPanelSettings: Configuración cargada correctamente')
                 }
             } catch (error) {
@@ -111,7 +119,7 @@ export const useDashboardConfig = () => {
             }
         }
     }
-    
+
     // Función para guardar la configuración en localStorage
     const savePanelSettings = () => {
         if (process.client) {
@@ -121,7 +129,7 @@ export const useDashboardConfig = () => {
                     visible: panel.visible,
                     order: panel.order
                 }))
-                
+
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
                 console.log('savePanelSettings: Configuración guardada correctamente')
             } catch (error) {
@@ -129,7 +137,7 @@ export const useDashboardConfig = () => {
             }
         }
     }
-    
+
     // Función para mover un panel hacia arriba
     const movePanelUp = (panelId) => {
         const panelIndex = dashboardPanels.value.findIndex(p => p.id === panelId)
@@ -137,18 +145,18 @@ export const useDashboardConfig = () => {
             // Intercambiar órdenes
             const currentOrder = dashboardPanels.value[panelIndex].order
             const previousOrder = dashboardPanels.value[panelIndex - 1].order
-            
+
             dashboardPanels.value[panelIndex].order = previousOrder
             dashboardPanels.value[panelIndex - 1].order = currentOrder
-            
+
             // Reordenar array
             dashboardPanels.value.sort((a, b) => a.order - b.order)
-            
+
             // Guardar cambios
             savePanelSettings()
         }
     }
-    
+
     // Función para mover un panel hacia abajo
     const movePanelDown = (panelId) => {
         const panelIndex = dashboardPanels.value.findIndex(p => p.id === panelId)
@@ -156,18 +164,18 @@ export const useDashboardConfig = () => {
             // Intercambiar órdenes
             const currentOrder = dashboardPanels.value[panelIndex].order
             const nextOrder = dashboardPanels.value[panelIndex + 1].order
-            
+
             dashboardPanels.value[panelIndex].order = nextOrder
             dashboardPanels.value[panelIndex + 1].order = currentOrder
-            
+
             // Reordenar array
             dashboardPanels.value.sort((a, b) => a.order - b.order)
-            
+
             // Guardar cambios
             savePanelSettings()
         }
     }
-    
+
     // Función para alternar la visibilidad de un panel
     const togglePanelVisibility = (panelId) => {
         const panel = dashboardPanels.value.find(p => p.id === panelId)
@@ -176,13 +184,13 @@ export const useDashboardConfig = () => {
             savePanelSettings()
         }
     }
-    
+
     // Función para resetear a configuración por defecto
     const resetToDefault = () => {
         dashboardPanels.value = [...defaultPanels]
         savePanelSettings()
     }
-    
+
     console.log('useDashboardConfig')
     return {
         dashboardPanels,
