@@ -199,7 +199,7 @@
             <SplitExpenseModal 
                 v-if="showSplitExpenseModal"
                 :selected-dinero="selectedDinero"
-                :users="users"
+                :users="selectedDinero?.users ? users.filter((u) => selectedDinero.users.includes(u.id)) : users"
                 @close="showSplitExpenseModal = false"
                 @expense-created="onExpenseAdded"
             />
