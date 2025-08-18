@@ -39,6 +39,7 @@
 <script setup>
 import { computed } from 'vue'
 import formatMoney from '~/utils/formatMoney'
+import { useUserStore } from '~/stores/user.store'
 
 const props = defineProps({
   expense: {
@@ -47,17 +48,12 @@ const props = defineProps({
   }
 })
 
-const users = [
-  { id: 1755351906420, name: 'Carli' },
-  { id: 1755352537310, name: 'coni' },
-  { id: 1755352541181, name: 'jordi' },
-  { id: 1755354762915, name: 'carlos' }
-]
+const userStore = useUserStore()
 
 const participantNames = computed(() => {
   if (!props.expense.participants) return []
   return props.expense.participants.map(pid => {
-    const user = users.find(u => u.id === pid)
+    const user = userStore.getUserById(pid)
     return user ? user.name : pid
   })
 })
