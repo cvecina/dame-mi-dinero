@@ -42,12 +42,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import RecurringExpenseModal from '~/components/RecurringExpenseModal.vue'
-import { useExpenseStore } from '~/stores/expense.store'
-import formatMoney from '~/utils/formatMoney'
+import { ref, onMounted, watch } from 'vue'
+import { useContextStore } from '~/stores/context.store'
 
 const expenseStore = useExpenseStore()
+const contextStore = useContextStore()
 const loading = ref(true)
 const recurringExpenses = ref([])
 const showModal = ref(false)
@@ -56,7 +55,8 @@ const selectedExpense = ref(null)
 const fetchRecurring = async () => {
   loading.value = true
   await expenseStore.fetchExpenses()
-  recurringExpenses.value = expenseStore.getAllExpenses.filter(e => e.isRecurring !== undefined)
+  const selectedDineroId = contextStore.getSelectedDineroId
+  recurringExpenses.value = expenseStore.getAllExpenses.filter(e => e.isRecurring !== undefined && e.dineroId === selectedDineroId)
   loading.value = false
 }
 
@@ -71,6 +71,7 @@ const reactivateRecurring = async (expense) => {
 }
 
 onMounted(fetchRecurring)
+watch(() => contextStore.getSelectedDineroId, fetchRecurring)
 
 function openModal(expense) {
   selectedExpense.value = expense
