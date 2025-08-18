@@ -1118,7 +1118,7 @@
         <!-- Resumen de balances personales -->
         <div
           v-if="isPanelVisible('balance')"
-          class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6"
+          class="bg-blanco-dividido rounded-lg shadow-md p-4 sm:p-6 mb-8"
           data-balance-section
           :style="{ order: getPanelOrder('balance') }"
         >
