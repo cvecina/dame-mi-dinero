@@ -58,6 +58,19 @@
                         >
                     </div>
 
+                    <!-- Gasto recurrente -->
+                    <div class="mb-4 flex items-center gap-2">
+                        <input
+                            id="recurrent-checkbox"
+                            type="checkbox"
+                            v-model="formData.isRecurring"
+                            class="w-4 h-4 text-lima-compartida bg-gray-100 border-gray-300 rounded focus:ring-lima-compartida focus:ring-2"
+                        >
+                        <label for="recurrent-checkbox" class="text-sm font-medium text-gris-billetera select-none">
+                            Gasto recurrente (se repetirá cada mes)
+                        </label>
+                    </div>
+
                     <!-- Cantidad total -->
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gris-billetera mb-2">
@@ -456,7 +469,8 @@ const formData = ref({
     category: '',
     description: '',
     paidBy: '',
-    participants: []
+    participants: [],
+    isRecurring: false
 })
 
 const splits = ref({})
@@ -638,7 +652,8 @@ const submitSplitExpense = async () => {
             description: formData.value.description,
             dineroId: props.selectedDinero.id,
             paidBy: parseInt(formData.value.paidBy),
-            participants: participantsWithAmounts
+            participants: participantsWithAmounts,
+            isRecurring: formData.value.isRecurring
         }
         
         console.log('Expense data to send:', expenseData)
@@ -657,7 +672,8 @@ const submitSplitExpense = async () => {
             category: '',
             description: '',
             paidBy: '',
-            participants: []
+            participants: [],
+            isRecurring: false
         }
         splits.value = {}
         customAmounts.value = {}

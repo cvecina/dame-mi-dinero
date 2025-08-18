@@ -14,22 +14,22 @@ export default defineEventHandler(async (event) => {
         if (method === 'POST') {
             // Crear nuevo gasto
             const body = await readBody(event)
-            const { title, amount, category, description, dineroId, paidBy, participants } = body
-            
+            const { title, amount, category, description, dineroId, paidBy, participants, isRecurring } = body
+
             if (!title || !amount || !category || !paidBy || !participants?.length || !dineroId) {
                 throw createError({
                     statusCode: 400,
                     statusMessage: 'Datos incompletos del gasto (incluyendo dineroId)'
                 })
             }
-            
+
             // Obtener gastos existentes
             const existingExpenses = await $fetch('/api/storage/expenses') || []
-            
+
             // Determinar si participants es un array simple de IDs o objetos con {userId, amount}
             let splits = []
             let participantIds = []
-            
+
             if (participants.length > 0 && typeof participants[0] === 'object' && participants[0].userId !== undefined) {
                 // Formato nuevo: array de objetos con {userId, amount}
                 splits = participants.map(p => ({
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
                     amount: Math.round((splitAmount + (index < remainder / 100 ? 0.01 : 0)) * 100) / 100
                 }))
             }
-            
+
             // Crear nuevo gasto
             const newExpense = {
                 id: Date.now(),
@@ -61,17 +61,18 @@ export default defineEventHandler(async (event) => {
                 participants: participantIds,
                 splits,
                 date: new Date().toISOString(),
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                isRecurring: !!isRecurring
             }
-            
+
             const updatedExpenses = [...existingExpenses, newExpense]
-            
+
             // Guardar en storage
             await $fetch('/api/storage/expenses', {
                 method: 'PUT',
                 body: updatedExpenses
             })
-            
+
             return {
                 success: true,
                 data: newExpense

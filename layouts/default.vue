@@ -73,6 +73,15 @@
             >
               Usuarios
             </NuxtLink>
+            <NuxtLink
+              to="/recurring-expenses"
+              class="text-gris-billetera hover:text-lima-compartida px-3 py-2 rounded-lg font-medium transition-colors"
+              :class="{
+                'text-lima-compartida bg-lima-compartida/10': $route.path === '/recurring-expenses',
+              }"
+            >
+              Recurrentes
+            </NuxtLink>
           </div>
 
           <!-- Selectors y menú móvil -->
@@ -118,6 +127,14 @@
               :class="{ 'text-azul-tiquet bg-azul-claro-viaje/10': $route.path === '/home' || $route.path === '/' }"
             >
               Inicio
+            </NuxtLink>
+            <NuxtLink
+              to="/recurring-expenses"
+              @click="showMobileMenu = false"
+              class="block px-3 py-2 text-gris-billetera hover:text-lima-compartida hover:bg-lima-compartida/10 rounded-lg font-medium transition-colors"
+              :class="{ 'text-lima-compartida bg-lima-compartida/10': $route.path === '/recurring-expenses' }"
+            >
+              Recurrentes
             </NuxtLink>
             <NuxtLink
               to="/dashboard"

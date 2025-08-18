@@ -241,6 +241,41 @@ export const useExpenseStore = defineStore({
     },
     
     actions: {
+        /**
+         * Añade automáticamente los gastos recurrentes al inicio de cada mes.
+         * Busca los gastos con isRecurring y crea uno nuevo con el mismo importe, participantes, etc,
+         * añadiendo al título el mes y año actual.
+         */
+        async addMonthlyRecurringExpenses() {
+            const now = new Date();
+            const month = now.toLocaleString('default', { month: 'long' });
+            const year = now.getFullYear();
+            // Filtrar gastos recurrentes
+            const recurringExpenses = this.expenses.filter(e => e.isRecurring);
+            for (const expense of recurringExpenses) {
+                // Verificar si ya existe un gasto recurrente para este mes y año
+                const alreadyExists = this.expenses.some(e =>
+                    e.isRecurring &&
+                    e.title.includes(`${month} ${year}`) &&
+                    e.title.startsWith(expense.title.split(' ')[0])
+                );
+                if (alreadyExists) continue;
+
+                // Crear nuevo gasto recurrente
+                const newExpense = {
+                    ...expense,
+                    title: `${expense.title} ${month} ${year}`,
+                    date: now.toISOString(),
+                    isRecurring: true
+                };
+                // Eliminar id si existe para que se cree uno nuevo
+                if (newExpense.id) delete newExpense.id;
+                await this.addExpense(newExpense);
+                this.$patch({ expenses: [...this.expenses, newExpense] });
+                this.alertStore?.success?.(`Gasto recurrente añadido: ${newExpense.title}`);
+                console.log('addMonthlyRecurringExpenses');
+            }
+        },
         async fetchExpenses() {
             this.loading = true
             try {
