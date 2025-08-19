@@ -1,3 +1,10 @@
+@keyframes bounce-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+.animate-bounce-right {
+  animation: bounce-right 1s infinite;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
