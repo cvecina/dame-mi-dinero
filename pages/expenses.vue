@@ -70,12 +70,12 @@
                             class="w-full px-3 py-2 text-sm border-2 border-azul-claro-viaje/30 rounded-xl focus:ring-2 focus:ring-azul-tiquet focus:border-azul-tiquet bg-blanco-dividido transition-all duration-200 hover:border-azul-claro-viaje"
                         >
                             <option value="">Todas las categorías</option>
-                            <option value="Comida">🍕 Comida</option>
-                            <option value="Transporte">🚗 Transporte</option>
-                            <option value="Alojamiento">🏠 Alojamiento</option>
-                            <option value="Entretenimiento">🎉 Entretenimiento</option>
-                            <option value="Compras">🛍️ Compras</option>
-                            <option value="Otros">📦 Otros</option>
+                            <option value="comida">🍕 Comida</option>
+                            <option value="transporte">🚗 Transporte</option>
+                            <option value="alojamiento">🏠 Alojamiento</option>
+                            <option value="entretenimiento">🎉 Entretenimiento</option>
+                            <option value="compras">🛍️ Compras</option>
+                            <option value="otros">📦 Otros</option>
                         </select>
                     </div>
 
@@ -299,7 +299,11 @@ const filteredExpenses = computed(() => {
 
     // Filtrar por categoría
     if (filters.value.category) {
-        filtered = filtered.filter(expense => expense.category === filters.value.category)
+        filtered = filtered.filter(expense => {
+            // Quitar emoji y espacios, pasar a minúsculas
+            const cleanCategory = expense.category.replace(/^[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]+\s*/, '').toLowerCase()
+            return cleanCategory === filters.value.category
+        })
     }
 
     // Filtrar por usuario
