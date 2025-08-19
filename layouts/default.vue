@@ -82,6 +82,15 @@
             >
               Recurrentes
             </NuxtLink>
+            <NuxtLink
+              to="/personal"
+              class="text-gris-billetera hover:text-lima-compartida px-3 py-2 rounded-lg font-medium transition-colors"
+              :class="{
+                'text-lima-compartida bg-lima-compartida/10': $route.path === '/personal',
+              }"
+            >
+              Personal
+            </NuxtLink>
           </div>
 
           <!-- Selectors y menú móvil -->
